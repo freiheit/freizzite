@@ -17,7 +17,7 @@ echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com
 dnf5 -y install code
 
 # https://pkgs.tailscale.com/stable/#fedora
-dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 config-manager addrepo --overwrite --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
 dnf5 -y install tailscale
 systemctl enable tailscaled
 
