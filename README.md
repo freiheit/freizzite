@@ -15,9 +15,9 @@ Go look at those 2 places for useful info/links, etc.
 
 0. **Don't**; you'd have to be crazy to do that
 1. Install bazzite (or another ublue flavor)
-2. Run `sudo rpm-ostree status` and save the info somewhere.
+2. Run `sudo bootc status` and/or `sudo rpm-ostree status` and save the info somewhere.
 3. Optional: `sudo ostree admin pin 0`
-4. `sudo bootc switch ghcr.io/freiheit/freizzite`
+4. `sudo bootc switch ghcr.io/freiheit/freizzite` (maybe rpm-ostree instead of bootc?)
 5. reboot
 
 ... maybe that's supposed to be an `rpm-ostree rebase` instead?
