@@ -28,13 +28,13 @@ systemctl enable plocate-updatedb.timer
 dnf -y install chezmoi chezmoi-bash-completion chezmoi-fish-completion
 
 # Random other stuff I end up wanting
-dnf -y install bzip2 bzip3 bzip3-grep bzip3-grep bzip3-tools unzip xz gzip ncompress p7zip zip 
+dnf -y install bzip2 bzip3 bzip3-grep bzip3-grep bzip3-tools unzip xz gzip ncompress p7zip zip netcat mtr
 
 # Lightweight editors that aren't vi
 dnf -y install joe jupp nano
 
 # Programming stuff I find handy
-dnf -y install ruff uv pre-commit jq yq
+dnf -y install ruff uv pre-commit jq yq gh git-lfs git-filter-repo git-koji nodejs nodejs-npm yamllint perltidy perl-CPAN perl-App-cpanminus sqlite sqlite-tools
 
 # Services I like to be sure are set up
 systemctl enable man-db-cache-update.service man-db-restart-cache-update.service chrony-wait.service
