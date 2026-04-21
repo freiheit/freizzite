@@ -16,6 +16,11 @@ rpm --import https://packages.microsoft.com/keys/microsoft.asc &&
 echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo
 dnf5 -y install code
 
+# https://pkgs.tailscale.com/stable/#fedora
+dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 -y install tailscale
+systemctl enable tailscaled
+
 # Track /etc with git
 dnf5 -y install etckeeper
 systemctl enable etckeeper.timer
