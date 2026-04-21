@@ -13,6 +13,19 @@ Go look at those 2 places for useful info/links, etc.
 
 ## Installation
 
-0. Don't; you'd have to be crazy to do that
-1. Install bazzite
-2. sudo bootc switch ghcr.io/freiheit/freizzite
+0. **Don't**; you'd have to be crazy to do that
+1. Install bazzite (or another ublue flavor)
+2. Run `sudo rpm-ostree status` and save the info somewhere.
+3. Optional: `sudo ostree admin pin 0`
+4. `sudo bootc switch ghcr.io/freiheit/freizzite`
+5. reboot
+
+... maybe that's supposed to be an `rpm-ostree rebase` instead?
+
+### Recovery
+
+If you want to swap back.
+
+* Temporary: reboot and pick the previous version
+* Permanent: `sudo bootc switch ghcr.io/ublue-os/bazzite-something` (Refer to saved `rpm-ostree status` info from install)
+
