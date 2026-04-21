@@ -2,23 +2,39 @@
 
 set -ouex pipefail
 
-### Install packages
+# My preferred prompt
+dnf5 -y copr enable atim/starship
+dnf5 -y install starship
 
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
+# https://support.1password.com/install-linux/#fedora-or-red-hat-enterprise-linux
+rpm --import https://downloads.1password.com/linux/keys/1password.asc
+echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=\"https://downloads.1password.com/linux/keys/1password.asc\"" > /etc/yum.repos.d/1password.repo
+dnf5 -y install 1password 1password-cli
 
-# this installs a package from fedora repos
-dnf5 install -y tmux 
+# https://code.visualstudio.com/docs/setup/linux#_rhel-fedora-and-centos-based-distributions
+rpm --import https://packages.microsoft.com/keys/microsoft.asc &&
+echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo
+dnf5 -y install code
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+# Track /etc with git
+dnf5 -y install etckeeper
+systemctl enable etckeeper.timer
 
-#### Example for enabling a System Unit File
+# Find files fast
+dnf5 -y install plocate
+systemctl enable plocate-updatedb.timer 
 
-systemctl enable podman.socket
+# Manage dotfiles
+dnf -y install chezmoi chezmoi-bash-completion chezmoi-fish-completion
+
+# Random other stuff I end up wanting
+dnf -y install bzip2 bzip3 bzip3-grep bzip3-grep bzip3-tools unzip xz gzip ncompress p7zip zip 
+
+# Lightweight editors that aren't vi
+dnf -y install joe jupp nano
+
+# Programming stuff I find handy
+dnf -y install ruff uv pre-commit jq yq
+
+# Services I like to be sure are set up
+systemctl enable man-db-cache-update.service man-db-restart-cache-update.service chrony-wait.service
