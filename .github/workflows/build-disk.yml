@@ -120,7 +120,7 @@ jobs:
         shell: bash
         env:
           RCLONE_CONFIG_S3_TYPE: s3
-          RCLONE_CONFIG_S3_PROVIDER: ${{ secrets.S3_PROVIDER }}
+          RCLONE_CONFIG_S3_PROVIDER: ${{ vars.S3_PROVIDER }}
           RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
@@ -129,4 +129,4 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rclone
-          rclone copy $SOURCE_DIR S3:${{ secrets.S3_BUCKET_NAME }}
+          rclone copy $SOURCE_DIR S3:${{ vars.S3_BUCKET_NAME }}
