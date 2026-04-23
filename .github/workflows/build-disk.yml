@@ -15,9 +15,11 @@ on:
         options:
           - amd64
           - arm64
-  pull_request:
-    branches:
-      - main
+#  pull_request:
+#    branches:
+#      - main
+    release:
+      types: [published]
     paths:
       - "./disk_config/disk.toml"
       - "./disk_config/iso.toml"
