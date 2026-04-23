@@ -5,7 +5,8 @@ on:
     branches:
       - main
   schedule:
-    - cron: "05 10 * * *" # 10:05am UTC everyday
+    - cron: "07 03 * * *" # 3:07pm US/Pacific
+      timezone: "America/Los_Angeles"
   push:
     branches:
       - main
