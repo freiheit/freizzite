@@ -105,6 +105,12 @@ jobs:
           types: ${{ matrix.disk-type }}
           additional-args: --rootfs btrfs --use-librepo=True
 
+      - name: Rename ISO to variant name
+        if: matrix.disk-type == 'anaconda-iso'
+        run: |
+          mv ${{ steps.build.outputs.output-directory }}/bootiso/install.iso \
+             ${{ steps.build.outputs.output-directory }}/bootiso/${{ env.IMAGE_NAME }}.iso
+
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
