@@ -51,7 +51,7 @@ jobs:
         run: |
           # Lowercase the image uri
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${{ matrix.variant.name,, }}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${{ matrix.variant.name }}" >> ${GITHUB_ENV}
           echo "BASE_IMAGE=${{ matrix.variant.base }}" >> ${GITHUB_ENV}
           echo "BUILD_VARIANT=${{ matrix.variant.base }}" >> ${GITHUB_ENV}
 
