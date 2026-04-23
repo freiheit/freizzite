@@ -125,9 +125,8 @@ jobs:
           RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
           RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          RCLONE_CONFIG_S3_ACL: ""
           SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
         run: |
           sudo apt-get update
           sudo apt-get install -y rclone
-          rclone copy $SOURCE_DIR S3:${{ vars.S3_BUCKET_NAME }}
+          rclone copy --s3-no-check-bucket --s3-acl "" $SOURCE_DIR S3:${{ vars.S3_BUCKET_NAME }}
