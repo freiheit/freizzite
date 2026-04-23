@@ -22,7 +22,9 @@ on:
       types: [published]
     paths:
       - "./disk_config/disk.toml"
+      - "./disk_config/iso-nvidia-open.toml"
       - "./disk_config/iso.toml"
+      - "./disk_config/iso-deck.toml"
       - "./.github/workflows/build-disk.yml"
 
 env:
@@ -86,7 +88,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Build disk images
+      - name: Build iso disk images
         id: build
         uses: osbuild/bootc-image-builder-action@main
         with:
