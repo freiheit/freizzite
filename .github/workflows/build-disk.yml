@@ -43,7 +43,7 @@ concurrency:
 jobs:
   build:
     name: Build disk images
-    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
+    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     strategy:
       fail-fast: false
       matrix:
@@ -127,6 +127,5 @@ jobs:
           RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
           SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y rclone
+          curl -sL https://rclone.org/install.sh | sudo bash
           rclone copy --s3-no-check-bucket --s3-acl "" $SOURCE_DIR S3:${{ vars.S3_BUCKET_NAME }}
