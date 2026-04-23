@@ -41,14 +41,12 @@ jobs:
       fail-fast: false
       matrix:
         variant:
+          - base: bazzite-nvidia-open
+            name: freizzite-nvidia-open
           - base: bazzite
             name: freizzite
           - base: bazzite-deck
             name: freizzite-deck
-          - base: bazzite-nvidia-open
-            name: freizzite-nvidia-open
-          - base: bazzite-nvidia
-            name: freizzite-nvidia
         disk-type: ["qcow2", "anaconda-iso"]
     permissions:
       contents: read

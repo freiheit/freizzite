@@ -32,15 +32,12 @@ jobs:
     strategy:
       matrix:
         variant:
+          - base: bazzite-nvidia-open
+            name: freizzite-nvidia-open
           - base: bazzite
             name: freizzite
           - base: bazzite-deck
             name: freizzite-deck
-          - base: bazzite-nvidia-open
-            name: freizzite-nvidia-open
-          - base: bazzite-nvidia
-            name: freizzite-nvidia
-
     permissions:
       contents: read
       packages: write
