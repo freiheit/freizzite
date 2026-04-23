@@ -27,7 +27,7 @@ else
     systemctl enable plocate-updatedb.timer 
 
     # Programming stuff I find handy
-    dnf -y install --skip-unavailable ruff uv pre-commit jq yq gh git-lfs git-filter-repo git-koji nodejs nodejs-npm yamllint perltidy perl-CPAN perl-App-cpanminus sqlite sqlite-tools
+    dnf -y install --skip-unavailable ruff uv pre-commit jq yq gh git-lfs git-filter-repo git-koji nodejs nodejs-npm yamllint perltidy perl-CPAN perl-App-cpanminus sqlite sqlite-tools shfmt shellcheck
 
     # Random other stuff I end up wanting
     dnf -y install --skip-unavailable bzip2 bzip3 bzip3-grep bzip3-grep bzip3-tools unzip xz gzip ncompress p7zip zip netcat mtr
