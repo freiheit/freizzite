@@ -40,6 +40,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        variant:
+          - base: bazzite
+            name: freizzite
+          - base: bazzite-deck
+            name: freizzite-deck
+          - base: bazzite-nvidia-open
+            name: freizzite-nvidia-open
+          - base: bazzite-nvidia
+            name: freizzite-nvidia
         disk-type: ["qcow2", "anaconda-iso"]
     permissions:
       contents: read
@@ -55,7 +64,7 @@ jobs:
           DISK_TYPE=$(echo "${{ matrix.disk-type }}" | tr ' ' '-')
           # Lowercase the image uri
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${{ matrix.variant.name,, }}" >> ${GITHUB_ENV}
           echo "DISK_TYPE=${DISK_TYPE}" >> ${GITHUB_ENV}
           echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
           echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}

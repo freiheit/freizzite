@@ -3,7 +3,11 @@ FROM scratch AS ctx
 COPY build_files /
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-nvidia-open:stable as freizzite
+ARG BASE_IMAGE=bazzite-nvidia-open
+ARG BASE_TAG=stable
+ARG BUILD_VARIANT=bazzite-nvidia-open
+FROM ghcr.io/ublue-os/${BASE_IMAGE}:${BASE_TAG} as freizzite
+ENV BUILD_VARIANT=${BUILD_VARIANT}
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest

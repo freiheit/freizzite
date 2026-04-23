@@ -5,20 +5,20 @@ on:
     branches:
       - main
   schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+    - cron: "05 10 * * *" # 10:05am UTC everyday
   push:
     branches:
       - main
     paths-ignore:
-      - '**/README.md'
+      - "**/README.md"
   workflow_dispatch:
 
 env:
   IMAGE_DESC: "Freizzite Customized Bazzite Image"
   IMAGE_KEYWORDS: "bootc,ublue,universal-blue,bazzite"
-  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
-  IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4" # Put your own image here for a fancy profile on https://artifacthub.io/!
+  IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
   DEFAULT_TAG: "latest"
 
 concurrency:
@@ -29,6 +29,17 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        variant:
+          - base: bazzite
+            name: freizzite
+          - base: bazzite-deck
+            name: freizzite-deck
+          - base: bazzite-nvidia-open
+            name: freizzite-nvidia-open
+          - base: bazzite-nvidia
+            name: freizzite-nvidia
 
     permissions:
       contents: read
@@ -40,7 +51,9 @@ jobs:
         run: |
           # Lowercase the image uri
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${{ matrix.variant.name,, }}" >> ${GITHUB_ENV}
+          echo "BASE_IMAGE=${{ matrix.variant.base }}" >> ${GITHUB_ENV}
+          echo "BUILD_VARIANT=${{ matrix.variant.base }}" >> ${GITHUB_ENV}
 
       # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
@@ -98,8 +111,9 @@ jobs:
         with:
           containerfiles: |
             ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+          build-args: |
+            BASE_IMAGE=${{ env.BASE_IMAGE }}
+            BUILD_VARIANT=${{ env.BUILD_VARIANT }}
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
@@ -161,7 +175,7 @@ jobs:
         uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         with:
-          cosign-release: 'v2.6.1'
+          cosign-release: "v2.6.1"
 
       - name: Sign container image
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
