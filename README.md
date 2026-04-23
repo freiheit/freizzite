@@ -6,7 +6,7 @@
 [![Dependabot Updates](https://github.com/freiheit/freizzite/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/dependabot/dependabot-updates)
 
 This is a freiheit clone of 
-[bazzite](https://github.com/ublue-os/bazzite) (nvidia Kinoite/KDE flavor)
+[bazzite](https://github.com/ublue-os/bazzite)
 using https://github.com/ublue-os/image-template to start with.
 
 Go look at those 2 places for useful info/links, etc.
@@ -15,9 +15,12 @@ Go look at those 2 places for useful info/links, etc.
 
 0. **Don't**; you'd have to be crazy to do that
 1. Install bazzite (or another ublue flavor)
-2. Run `sudo bootc status` and/or `sudo rpm-ostree status` and save the info somewhere.
+2. Run `sudo bootc status` and `sudo rpm-ostree status` and save the info somewhere.
 3. Optional: `sudo ostree admin pin 0`
-4. `sudo bootc switch ghcr.io/freiheit/freizzite` (maybe rpm-ostree instead of bootc?)
+4. Depending which flavor you want, one of these:
+   * `sudo bootc switch ghcr.io/freiheit/freizzite`
+   * `sudo bootc switch ghcr.io/freiheit/freizzite-nvidia-open`
+   * `sudo bootc switch ghcr.io/freiheit/freizzite-deck`
 5. reboot
 
 ... maybe that's supposed to be an `rpm-ostree rebase` instead?
