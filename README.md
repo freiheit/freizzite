@@ -5,9 +5,9 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/freizzite)](https://artifacthub.io/packages/search?repo=freizzite)
 [![Dependabot Updates](https://github.com/freiheit/freizzite/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/dependabot/dependabot-updates)
 
-This is a freiheit clone of 
+This is a freiheit clone of
 [bazzite](https://github.com/ublue-os/bazzite)
-using https://github.com/ublue-os/image-template to start with.
+using <https://github.com/ublue-os/image-template> to start with.
 
 Go look at those 2 places for useful info/links, etc.
 
@@ -30,5 +30,5 @@ Go look at those 2 places for useful info/links, etc.
 If you want to swap back.
 
 * Temporary: reboot and pick the previous version
-* Permanent: `sudo bootc switch ghcr.io/ublue-os/bazzite-something` (Refer to saved `rpm-ostree status` info from install)
-
+* Permanent: `sudo bootc switch ghcr.io/ublue-os/bazzite-something`
+  (Refer to saved `rpm-ostree status` info from install)

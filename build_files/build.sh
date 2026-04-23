@@ -24,7 +24,7 @@ else
 
     # Find files fast
     dnf5 -y install plocate
-    systemctl enable plocate-updatedb.timer 
+    systemctl enable plocate-updatedb.timer
 
     # Programming stuff I find handy
     dnf -y install --skip-unavailable ruff uv pre-commit jq yq gh git-lfs git-filter-repo git-koji nodejs nodejs-npm yamllint perltidy perl-CPAN perl-App-cpanminus sqlite sqlite-tools shfmt shellcheck
@@ -51,4 +51,3 @@ dnf -y install --skip-unavailable joe jupp nano
 # Track /etc with git
 dnf5 -y install etckeeper
 systemctl enable etckeeper.timer
-
