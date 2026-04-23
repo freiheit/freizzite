@@ -1,12 +1,13 @@
+ARG BASE_IMAGE=bazzite-nvidia-open
+ARG BASE_TAG=stable
+ARG BUILD_VARIANT=bazzite-nvidia-open
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 
 # Base Image
-ARG BASE_IMAGE=bazzite-nvidia-open
-ARG BASE_TAG=stable
-ARG BUILD_VARIANT=bazzite-nvidia-open
-FROM ghcr.io/ublue-os/${BASE_IMAGE}:${BASE_TAG} as freizzite
+FROM ghcr.io/ublue-os/${BASE_IMAGE}:${BASE_TAG}
 ARG BUILD_VARIANT
 ENV BUILD_VARIANT=${BUILD_VARIANT}
 
