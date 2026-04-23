@@ -7,6 +7,7 @@ ARG BASE_IMAGE=bazzite-nvidia-open
 ARG BASE_TAG=stable
 ARG BUILD_VARIANT=bazzite-nvidia-open
 FROM ghcr.io/ublue-os/${BASE_IMAGE}:${BASE_TAG} as freizzite
+ARG BUILD_VARIANT
 ENV BUILD_VARIANT=${BUILD_VARIANT}
 
 ## Other possible base images include:
@@ -38,7 +39,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh
-    
+
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
