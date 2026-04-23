@@ -57,7 +57,7 @@ jobs:
           - base: bazzite-deck
             name: freizzite-deck
             iso-config: ./disk_config/iso-deck.toml
-        disk-type: ["qcow2", "anaconda-iso"]
+        disk-type: ["anaconda-iso"] # qcow2 disabled until disk space issues are resolved
     permissions:
       contents: read
       packages: read
