@@ -32,7 +32,7 @@ DESKTOP_PACKAGES=(
     perltidy
     pre-commit
     ruff
-    shellcheck
+    ShellCheck
     shfmt
     sqlite
     sqlite-tools
@@ -69,3 +69,11 @@ DESKTOP_SYSTEMCTL=(
 dnf -y install --skip-unavailable "${DESKTOP_PACKAGES[@]}"
 
 systemctl enable "${DESKTOP_SYSTEMCTL[@]}"
+
+op completion fish > /etc/fish/completions/op
+op completion bash > /etc/bash_completion.d/op
+
+starship completion fish > /etc/fish/completions/starship
+starship completion bash > /etc/bash_completion.d/starship
+
+npm completion > /etc/bash_completion.d/npm
