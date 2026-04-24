@@ -25,3 +25,6 @@ dnf5 config-manager setopt tailscale-stable.enabled=true
 dnf5 -y install --skip-unavailable --enable-repo=terra "${COMMON_PACKAGES[@]}"
 
 systemctl enable "${COMMON_SYSTEMCTL[@]}"
+
+tailscale completion fish > /etc/fish/completions/tailscale
+tailscale completion bash > /etc/bash_completion.d/tailscale
