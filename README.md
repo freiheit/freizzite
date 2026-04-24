@@ -14,9 +14,11 @@ Go look at those 2 places for useful info/links, etc.
 
 ## Variants
 
-* freizzite: KDE Desktop/Laptop with AMD/Intel/etc GPU
-* freizzite-nvidia-open: KDE Desktop/Laptop with Nvidia GPU
-* freizzite-deck: KDE SteamDeck or similar
+| Variant               | Description                               |
+| --------------------- | ------------------------------------------|
+| freizzite             | KDE Desktop/Laptop with AMD/Intel/etc GPU |
+| freizzite-nvidia-open | KDE Desktop/Laptop with Nvidia GPU        |
+| freizzite-deck        | KDE SteamDeck or similar                  |
 
 ## Installation
 
@@ -34,9 +36,11 @@ Go look at those 2 places for useful info/links, etc.
 
 ### ISOs (untested)
 
-* freizzite: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite.iso>
-* freizzite-nvidia-open: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-nvidia-open.iso>
-* freizzite-deck: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-deck.iso>
+| Variant               | Description                               |
+| --------------------- | ------------------------------------------|
+| freizzite             | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite.iso> |
+| freizzite-nvidia-open | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-nvidia-open.iso> |
+| freizzite-deck        | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-deck.iso> |
 
 ### Recovery
 
