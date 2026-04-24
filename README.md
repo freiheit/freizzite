@@ -12,7 +12,7 @@ using <https://github.com/ublue-os/image-template> to start with.
 
 Go look at those 2 places for useful info/links, etc.
 
-## Variants:
+## Variants
 
 * freizzite: KDE Desktop/Laptop with AMD/Intel/etc GPU
 * freizzite-nvidia-open: KDE Desktop/Laptop with Nvidia GPU
