@@ -39,11 +39,9 @@ fi
 dnf -y install --skip-unavailable chezmoi chezmoi-bash-completion chezmoi-fish-completion
 
 # https://pkgs.tailscale.com/stable/#fedora
-dnf5 config-manager addrepo --overwrite --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 config-manager setopt tailscale-stable.enabled=true
 dnf5 -y install tailscale
 systemctl enable tailscaled
-
-
 
 # Lightweight editors that aren't vi
 dnf -y install --skip-unavailable joe jupp nano
