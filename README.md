@@ -12,6 +12,12 @@ using <https://github.com/ublue-os/image-template> to start with.
 
 Go look at those 2 places for useful info/links, etc.
 
+## Variants:
+
+* freizzite: KDE Desktop/Laptop with AMD/Intel/etc GPU
+* freizzite-nvidia-open: KDE Desktop/Laptop with Nvidia GPU
+* freizzite-deck: KDE SteamDeck or similar
+
 ## Installation
 
 0. **Don't**; you'd have to be crazy to do that
@@ -25,6 +31,12 @@ Go look at those 2 places for useful info/links, etc.
 5. reboot
 
 ... maybe that's supposed to be an `rpm-ostree rebase` instead?
+
+### ISOs (untested)
+
+* freizzite: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite.iso>
+* freizzite-nvidia-open: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-nvidia-open.iso>
+* freizzite-deck: <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-deck.iso>
 
 ### Recovery
 
