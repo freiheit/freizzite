@@ -32,15 +32,14 @@ Go look at those 2 places for useful info/links, etc.
 
 ... maybe that's supposed to be an `rpm-ostree rebase` instead?
 
-### ISOs (untested)
+### ISOs (available on request; untested)
 
-| Variant               | Description                               |
-| --------------------- | ------------------------------------------|
-| freizzite             | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite.iso> |
-| freizzite-nvidia-open | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-nvidia-open.iso> |
-| freizzite-deck        | <https://f001.backblazeb2.com/file/freizzite/bootiso/freizzite-deck.iso> |
+**Untested** ISOs available on request.
 
-### Recovery
+Generating them isn't a problem, but hosting downloads for 7-10GB files is
+potentially pricey.
+
+## Recovery
 
 If you want to swap back.
 
