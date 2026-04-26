@@ -6,17 +6,19 @@ COMMON_PACKAGES=(
     chezmoi
     chezmoi-bash-completion
     chezmoi-fish-completion
-    tailscale
+    etckeeper
+    firacode-nerd-fonts
+    firamono-nerd-fonts.noarch
     joe
     jupp
     nano
-    etckeeper
+    tailscale
 )
 
 # Common services for all variants
 COMMON_SYSTEMCTL=(
-    tailscaled.service
     etckeeper.timer
+    tailscaled.service
 )
 
 # Enable tailscale repo
