@@ -158,9 +158,10 @@ jobs:
         run: |
           curl -sL https://rclone.org/install.sh | sudo bash
           echo "[webdav]
-          type = webdav
-          url = ${{ secrets.WEBDAV_URL }}
-          vendor = fastmail
-          user = ${{ secrets.WEBDAV_USERNAME }}
-          pass = ${{ secrets.WEBDAV_PASSWORD }}" > rclone.conf
-          rclone --config rclone.conf sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
+          type = webdav" > rclone.conf
+          rclone --config rclone.conf \
+            --vendor fastmail \
+            --webdav-url "${{ secrets.WEBDAV_URL }}" \
+            --webdav-user "${{ secrets.WEBDAV_USERNAME }}" \
+            --webdav-pass "${{ secrets.WEBDAV_PASSWORD }}" \
+            sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
