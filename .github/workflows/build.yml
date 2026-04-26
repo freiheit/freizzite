@@ -4,14 +4,13 @@ on:
   pull_request:
     branches:
       - main
+  workflow_run:
+    workflows: ["pre-commit"]
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: "33 15 * * *" # 3:33pm US/Pacific
       timezone: "America/Los_Angeles"
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "**/README.md"
   workflow_dispatch:
 
 env:
@@ -30,6 +29,10 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-24.04
+    # Only run if not triggered by workflow_run, OR if workflow_run was successful
+    if: >
+      github.event_name != 'workflow_run' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     strategy:
       matrix:
         variant:
