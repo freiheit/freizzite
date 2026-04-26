@@ -8,8 +8,8 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      upload-to-s3:
-        description: "Upload to S3"
+      upload-to-webdav:
+        description: "Upload to WebDAV"
         required: false
         default: false
         type: boolean
@@ -119,9 +119,26 @@ jobs:
           mv ${{ steps.build.outputs.output-directory }}/bootiso/install.iso \
              ${{ steps.build.outputs.output-directory }}/iso/${{ env.IMAGE_NAME }}.iso
 
+      - name: Rename manifest to variant name
+        if: matrix.disk-type == 'anaconda-iso'
+        run: |
+          # Find and rename the manifest file to match the ISO naming convention
+          find ${{ steps.build.outputs.output-directory }} -name '*.manifest' -type f \
+            -exec mv {} ${{ steps.build.outputs.output-directory }}/iso/${{ env.IMAGE_NAME }}.iso.manifest \;
+
+      - name: Generate checksums
+        if: matrix.disk-type == 'anaconda-iso'
+        run: |
+          cd ${{ steps.build.outputs.output-directory }}/iso
+          # Generate SHA256 checksum (both file names)
+          sha256sum *.iso > ${{ env.IMAGE_NAME }}.iso.sha256sum
+          cp ${{ env.IMAGE_NAME }}.iso.sha256sum ${{ env.IMAGE_NAME }}.iso.shasum
+          # Generate MD5 checksum
+          md5sum *.iso > ${{ env.IMAGE_NAME }}.iso.md5sum
+
       - name: Upload disk images and Checksum to Job Artifacts
         if: github.event_name != 'pull_request'
-        # if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
+        # if: inputs.upload-to-webdav != true && github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: ${{ steps.build.outputs.output-directory }}
@@ -130,17 +147,17 @@ jobs:
           compression-level: 0
           overwrite: true
 
-      - name: Upload to S3
-        if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
+      - name: Upload to WebDAV
+        if: inputs.upload-to-webdav == true && github.event_name != 'pull_request'
         shell: bash
         env:
-          RCLONE_CONFIG_S3_TYPE: s3
-          RCLONE_CONFIG_S3_PROVIDER: ${{ vars.S3_PROVIDER }}
-          RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
-          RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
           SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
         run: |
           curl -sL https://rclone.org/install.sh | sudo bash
-          rclone copy --s3-no-check-bucket --s3-acl "" $SOURCE_DIR S3:${{ vars.S3_BUCKET_NAME }}
+          echo "[webdav]
+          type = webdav
+          url = ${{ secrets.WEBDAV_URL }}
+          vendor = fastmail
+          user = ${{ secrets.WEBDAV_USERNAME }}
+          pass = ${{ secrets.WEBDAV_PASSWORD }}" > rclone.conf
+          rclone --config rclone.conf sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
