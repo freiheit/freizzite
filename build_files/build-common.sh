@@ -9,9 +9,11 @@ COMMON_PACKAGES=(
     etckeeper
     firacode-nerd-fonts
     firamono-nerd-fonts.noarch
+    htop
     joe
     jupp
     nano
+    powertop
     tailscale
 )
 

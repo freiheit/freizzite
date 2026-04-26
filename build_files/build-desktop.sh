@@ -48,6 +48,7 @@ DESKTOP_PACKAGES=(
     plocate
     mtr
     netcat
+    rclone
 
     # Various (de)compression tools
     bzip2
