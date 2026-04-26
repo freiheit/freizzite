@@ -160,7 +160,7 @@ jobs:
           echo "[webdav]
           type = webdav" > rclone.conf
           rclone --config rclone.conf \
-            --vendor fastmail \
+            --webdav-vendor fastmail \
             --webdav-url "${{ secrets.WEBDAV_URL }}" \
             --webdav-user "${{ secrets.WEBDAV_USERNAME }}" \
             --webdav-pass "${{ secrets.WEBDAV_PASSWORD }}" \
