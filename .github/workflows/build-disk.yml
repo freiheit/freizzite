@@ -116,12 +116,14 @@ jobs:
       - name: Rename ISO to variant name
         if: matrix.disk-type == 'anaconda-iso'
         run: |
+          mkdir -p ${{ steps.build.outputs.output-directory }}/iso
           mv ${{ steps.build.outputs.output-directory }}/bootiso/install.iso \
              ${{ steps.build.outputs.output-directory }}/iso/${{ env.IMAGE_NAME }}.iso
 
       - name: Rename manifest to variant name
         if: matrix.disk-type == 'anaconda-iso'
         run: |
+          mkdir -p ${{ steps.build.outputs.output-directory }}/iso
           # Find and rename the manifest file to match the ISO naming convention
           find ${{ steps.build.outputs.output-directory }} -name '*.manifest' -type f \
             -exec mv {} ${{ steps.build.outputs.output-directory }}/iso/${{ env.IMAGE_NAME }}.iso.manifest \;
@@ -129,6 +131,7 @@ jobs:
       - name: Generate checksums
         if: matrix.disk-type == 'anaconda-iso'
         run: |
+          mkdir -p ${{ steps.build.outputs.output-directory }}/iso
           cd ${{ steps.build.outputs.output-directory }}/iso
           # Generate SHA256 checksum (both file names)
           sha256sum *.iso > ${{ env.IMAGE_NAME }}.iso.sha256sum
