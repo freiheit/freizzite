@@ -60,6 +60,9 @@ DESKTOP_PACKAGES=(
     unzip
     xz
     zip
+
+    # Website thingy
+    hugo
 )
 
 # Services I like to be sure are set up
