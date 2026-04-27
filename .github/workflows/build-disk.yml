@@ -162,11 +162,9 @@ jobs:
           SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
         run: |
           curl -sL https://rclone.org/install.sh | sudo bash
-          echo "[webdav]
-          type = webdav" > rclone.conf
-          rclone --config rclone.conf \
+          rclone sync ./iso \
             --webdav-vendor fastmail \
             --webdav-url "${{ secrets.WEBDAV_URL }}" \
             --webdav-user "${{ secrets.WEBDAV_USERNAME }}" \
             --webdav-pass "${{ secrets.WEBDAV_PASSWORD }}" \
-            sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
+            :webdav:${{ secrets.WEBDAV_PATH }}
