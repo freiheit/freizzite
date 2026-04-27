@@ -163,6 +163,7 @@ jobs:
         run: |
           curl -sL https://rclone.org/install.sh | sudo bash
           OBSCURED_PASS=$(rclone obscure "${{ secrets.WEBDAV_PASSWORD }}")
+          cd output
           echo "[webdav]
           type = webdav
           url = ${{ secrets.WEBDAV_URL }}
@@ -171,6 +172,7 @@ jobs:
           pass = ${OBSCURED_PASS}" > rclone.conf
           pwd
           ls -l
+          find . -ls
           rclone --config rclone.conf ls webdav:
           rclone --config rclone.conf ls webdav:${{ secrets.WEBDAV_PATH }}
           rclone --config rclone.conf sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
