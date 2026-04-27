@@ -169,4 +169,8 @@ jobs:
           vendor = fastmail
           user = ${{ secrets.WEBDAV_USERNAME }}
           pass = ${OBSCURED_PASS}" > rclone.conf
+          pwd
+          ls -l
+          rclone --config rclone.conf ls webdav:
+          rclone --config rclone.conf ls webdav:${{ secrets.WEBDAV_PATH }}
           rclone --config rclone.conf sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
