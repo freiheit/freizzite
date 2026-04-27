@@ -102,6 +102,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
+      # Attempt to work around occassional timing issue of this running before containers are fully ready
+      - name: Pre-pull container image
+        run: |
+          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} || sleep 5m
+
       - name: Build iso disk images
         id: build
         uses: osbuild/bootc-image-builder-action@main
