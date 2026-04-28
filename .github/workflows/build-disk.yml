@@ -155,24 +155,9 @@ jobs:
           compression-level: 0
           overwrite: true
 
-      - name: Upload to WebDAV
-        if: inputs.upload-to-webdav == true && github.event_name != 'pull_request'
-        shell: bash
-        env:
-          SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
-        run: |
-          curl -sL https://rclone.org/install.sh | sudo bash
-          OBSCURED_PASS=$(rclone obscure "${{ secrets.WEBDAV_PASSWORD }}")
-          cd ${{ steps.build.outputs.output-directory }}
-          echo "[webdav]
-          type = webdav
-          url = ${{ secrets.WEBDAV_URL }}
-          vendor = fastmail
-          user = ${{ secrets.WEBDAV_USERNAME }}
-          pass = ${OBSCURED_PASS}" > rclone.conf
-          pwd
-          ls -l
-          find . -ls
-          rclone --config rclone.conf ls webdav:
-          rclone --config rclone.conf ls webdav:${{ secrets.WEBDAV_PATH }}
-          rclone --config rclone.conf sync ./iso webdav:${{ secrets.WEBDAV_PATH }}
+
+      - name: Upload Release Assets
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.build.outputs.output-directory }}/iso/*
