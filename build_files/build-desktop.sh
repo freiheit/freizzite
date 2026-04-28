@@ -45,6 +45,9 @@ DESKTOP_PACKAGES=(
     yq
 
     # Handy tools
+    atuin
+    atuin-all-users
+    thefuck
     plocate
     mtr
     netcat
