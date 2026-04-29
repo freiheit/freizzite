@@ -20,7 +20,7 @@ Go look at those 2 places for useful info/links, etc.
 ## Installation
 
 0. **Don't**; you'd have to be crazy to do that
-1. Install bazzite (or another ublue flavor)
+1. Install bazzite (or another ublue flavor) **must be KDE/Kinoite variant**.
 2. Run `sudo bootc status` and `sudo rpm-ostree status` and save the info somewhere.
 3. Optional: `sudo ostree admin pin 0`
 4. Depending which flavor you want, one of these:
