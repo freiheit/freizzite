@@ -1,8 +1,7 @@
 # freizzite
 
 [![Build container image](https://github.com/freiheit/freizzite/actions/workflows/build.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/build.yml)
-[![Build disk images](https://github.com/freiheit/freizzite/actions/workflows/build-disk.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/build-disk.yml)
-[![pre-commit](https://github.com/freiheit/freizzite/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/pre-commit.yml)
+[![pre-commit checks](https://github.com/freiheit/freizzite/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/pre-commit.yml)
 
 This is a freiheit clone of
 [bazzite](https://github.com/ublue-os/bazzite)
