@@ -44,6 +44,9 @@ DESKTOP_PACKAGES=(
     yamllint
     yq
 
+    # Try zed out
+    zed
+
     # Handy tools
     atuin
     atuin-all-users
