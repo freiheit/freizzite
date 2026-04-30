@@ -2,10 +2,10 @@
 name: Build disk images
 
 on:
-  workflow_run:
-    workflows: ["Build container image"]
-    types: [completed]
-    branches: [main]
+#  workflow_run:
+#    workflows: ["Build container image"]
+#    types: [completed]
+#    branches: [main]
   workflow_dispatch:
     inputs:
       upload-to-webdav:
@@ -22,17 +22,17 @@ on:
 #  pull_request:
 #    branches:
 #      - main
-  release:
-    types: [published]
-  push:
-    branches:
-      - main
-    paths:
-      - "./disk_config/disk.toml"
-      - "./disk_config/iso-nvidia-open.toml"
-      - "./disk_config/iso.toml"
-      - "./disk_config/iso-deck.toml"
-      - "./.github/workflows/build-disk.yml"
+#  release:
+#    types: [published]
+#  push:
+#    branches:
+#      - main
+#    paths:
+#      - "./disk_config/disk.toml"
+#      - "./disk_config/iso-nvidia-open.toml"
+#      - "./disk_config/iso.toml"
+#      - "./disk_config/iso-deck.toml"
+#      - "./.github/workflows/build-disk.yml"
 
 env:
   IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
