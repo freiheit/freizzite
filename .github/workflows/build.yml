@@ -9,8 +9,11 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    - cron: "33 15 * * *" # 3:33pm US/Pacific
+    - cron: "23 15,22 * * *" # 3:33pm US/Pacific; convenient times for me
       timezone: "America/Los_Angeles"
+    - cron: "29 07 * * SAT,SUN" # Weekend Mornings US/Pacific
+      timezone: "America/Los_Angeles"
+    - cron: "40 5 * * 1" # 5:40 utc monday; 1h after bazzite weekly
   workflow_dispatch:
 
 env:
