@@ -14,6 +14,7 @@ COMMON_PACKAGES=(
     jupp
     nano
     powertop
+    pulseaudio-qpaeq
     tailscale
 )
 
