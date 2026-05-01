@@ -80,7 +80,7 @@ DESKTOP_SYSTEMCTL=(
     plocate-updatedb.timer
 )
 
-dnf -y install --skip-unavailable "${DESKTOP_PACKAGES[@]}"
+dnf -y install --skip-unavailable --enable-repo=terra "${DESKTOP_PACKAGES[@]}"
 
 systemctl enable "${DESKTOP_SYSTEMCTL[@]}"
 
