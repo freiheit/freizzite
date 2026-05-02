@@ -65,6 +65,11 @@ DESKTOP_PACKAGES=(
     netcat
     rclone
 
+    # Prefer "native" over flathub so Rich Presence works better
+    vesktop
+    discord
+    discord-canary
+
     # Various (de)compression tools
     bzip2
     bzip3
