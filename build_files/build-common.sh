@@ -6,6 +6,7 @@ COMMON_PACKAGES=(
     chezmoi
     chezmoi-bash-completion
     chezmoi-fish-completion
+    easyeffects
     etckeeper
     firacode-nerd-fonts
     firamono-nerd-fonts.noarch
@@ -14,8 +15,8 @@ COMMON_PACKAGES=(
     jupp
     nano
     powertop
-    pulseaudio-qpaeq
     tailscale
+    wiremix
 )
 
 # Common services for all variants
