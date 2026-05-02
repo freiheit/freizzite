@@ -14,7 +14,16 @@ echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com
 rpm --import https://downloads.1password.com/linux/keys/1password.asc
 echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=\"https://downloads.1password.com/linux/keys/1password.asc\"" > /etc/yum.repos.d/1password.repo
 
+# https://support.mozilla.org/en-US/kb/install-firefox-linux#w_install-firefox-rpm-package-recommended
+dnf5 config-manager addrepo --id=mozilla \
+  --set=baseurl=https://packages.mozilla.org/rpm/firefox \
+  --set=gpgkey=https://packages.mozilla.org/rpm/firefox/signing-key.gpg \
+  --set=gpgcheck=1 --set=repo_gpgcheck=0 --set=priority=10
+
 DESKTOP_PACKAGES=(
+    # I'd prefer non-flatpak browser so I can do 1password desktop integration easier
+    firefox
+
     # 1Password (Integrations struggle in Flatpak install)
     1password
     1password-cli
