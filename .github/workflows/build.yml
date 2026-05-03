@@ -76,20 +76,35 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
+      - name: Compute image tags
+        id: taggen
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          BASE_IMAGE: ${{ env.BASE_IMAGE }}
+          BASE_TAG: ${{ env.BASE_TAG || 'stable' }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y%m%d)
+          export DATE
+          BASE_IMAGE=${BASE_IMAGE:-bazzite-nvidia-open}
+          BASE_TAG=${BASE_TAG:-stable}
+          export BASE_IMAGE BASE_TAG
+
+          TAGS=$(python3 build_files/compute_tags.py)
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          printf '%s\n' "$TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
       - name: Image Metadata
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         id: metadata
         with:
-          # This generates all the tags for your image, you can add custom tags here too!
-          # Default tags are "$DEFAULT_TAG" and "$DEFAULT_TAG.$date".
-          tags: |
-            type=raw,value=${{ env.DEFAULT_TAG }}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value={{date 'YYYYMMDD'}}
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr
+          tags: ${{ steps.taggen.outputs.tags }}
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
