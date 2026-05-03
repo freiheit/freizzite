@@ -87,6 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          pip install requests
           DATE=$(date -u +%Y%m%d)
           export DATE
           BASE_IMAGE=${BASE_IMAGE:-bazzite-nvidia-open}

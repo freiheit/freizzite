@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Generate metadata-action image tags for custom freizzite builds."""
 
-import json
 import os
 import re
 import sys
-from urllib import error, parse, request
+import requests
 
+# Environment variables
 IMAGE_NAME = os.environ.get("IMAGE_NAME")
 BASE_IMAGE = os.environ.get("BASE_IMAGE", "bazzite-nvidia-open")
 BASE_TAG = os.environ.get("BASE_TAG", "stable")
@@ -24,21 +24,21 @@ if GITHUB_TOKEN:
 
 
 def request_json(url, params=None):
-    if params:
-        url = f"{url}?{parse.urlencode(params)}"
-    req = request.Request(url, headers=HEADERS)
-    with request.urlopen(req) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    response = requests.get(url, headers=HEADERS, params=params)
+    response.raise_for_status()
+    return response.json()
 
 
 def package_versions(owner, package):
     for prefix in ["https://api.github.com/orgs", "https://api.github.com/users"]:
-        endpoint = f"{prefix}/{owner}/packages/container/{package}/versions"
         try:
-            versions = []
-            page = 1
+            versions, page = [], 1
             while True:
-                data = request_json(endpoint, {"page": page, "per_page": 100})
+                response = requests.get(f"{prefix}/{owner}/packages/container/{package}/versions", headers=HEADERS, params={"page": page, "per_page": 100})
+                if response.status_code in (403, 404):
+                    break
+                response.raise_for_status()
+                data = response.json()
                 if not data:
                     break
                 versions.extend(data)
@@ -46,23 +46,16 @@ def package_versions(owner, package):
                     break
                 page += 1
             return versions
-        except error.HTTPError as exc:
-            if exc.code in (403, 404):
-                continue
-            raise
+        except requests.exceptions.RequestException:
+            continue
     return []
 
 
 def next_daily_sequence(date_str):
     versions = package_versions(REPO_OWNER, IMAGE_NAME)
-    seen = set()
-    for version in versions:
-        tags = version.get("metadata", {}).get("container", {}).get("tags", []) or []
-        for tag in tags:
-            match = re.fullmatch(rf"{re.escape(date_str)}(?:\.(\d+))?", tag)
-            if match:
-                seen.add(int(match.group(1) or 0))
-
+    seen = {int(match.group(1) or 0) for version in versions
+            for tag in version.get("metadata", {}).get("container", {}).get("tags", [])
+            if (match := re.fullmatch(rf"{re.escape(date_str)}(?:\.(\d+))?", tag))}
     seq = 0
     while seq in seen:
         seq += 1
@@ -71,30 +64,24 @@ def next_daily_sequence(date_str):
 
 def extract_base_tags():
     versions = package_versions("ublue-os", BASE_IMAGE)
-    major = None
-    tags = []
     prefix = f"{BASE_IMAGE}-"
     for version in versions:
-        version_tags = version.get("metadata", {}).get("container", {}).get("tags", []) or []
+        version_tags = version.get("metadata", {}).get("container", {}).get("tags", [])
         if BASE_TAG in version_tags:
+            major = None
+            tags = []
             for tag in version_tags:
-                if tag.startswith(prefix):
-                    continue
-                tags.append(f"{prefix}{tag}")
-                match = re.fullmatch(r"stable-(\d+)(?:\.(.+))?", tag)
-                if match:
-                    major = match.group(1)
-            break
-    return major, sorted(set(tags))
+                if not tag.startswith(prefix):
+                    tags.append(f"{prefix}{tag}")
+                    if match := re.fullmatch(r"stable-(\d+)(?:\.(.+))?", tag):
+                        major = match.group(1)
+            return major, sorted(set(tags))
+    return None, []
 
 
 def main():
-    missing = [name for name, value in (
-        ("IMAGE_NAME", IMAGE_NAME),
-        ("REPO_OWNER", REPO_OWNER),
-        ("DATE", DATE),
-    ) if not value]
-    if missing:
+    if not all([IMAGE_NAME, REPO_OWNER, DATE]):
+        missing = [k for k, v in [("IMAGE_NAME", IMAGE_NAME), ("REPO_OWNER", REPO_OWNER), ("DATE", DATE)] if not v]
         print(f"Missing environment variables: {', '.join(missing)}", file=sys.stderr)
         sys.exit(1)
 
@@ -103,11 +90,7 @@ def main():
 
     major, base_tags = extract_base_tags()
 
-    tags = [
-        "latest",
-        daily_tag,
-        f"latest.{daily_tag}",
-    ]
+    tags = ["latest", daily_tag, f"latest.{daily_tag}"]
     if major:
         tags.append(f"{major}.{daily_tag}")
         tags.extend(base_tags)
