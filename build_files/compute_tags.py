@@ -69,22 +69,21 @@ def next_daily_sequence(date_str):
     return seq
 
 
-def extract_bazzite_tags():
+def extract_base_tags():
     versions = package_versions("ublue-os", BASE_IMAGE)
     major = None
     tags = []
+    prefix = f"{BASE_IMAGE}-"
     for version in versions:
         version_tags = version.get("metadata", {}).get("container", {}).get("tags", []) or []
         if BASE_TAG in version_tags:
             for tag in version_tags:
+                if tag.startswith(prefix):
+                    continue
+                tags.append(f"{prefix}{tag}")
                 match = re.fullmatch(r"stable-(\d+)(?:\.(.+))?", tag)
                 if match:
                     major = match.group(1)
-                    suffix = match.group(2)
-                    if suffix:
-                        tags.append(f"bazzite-{major}.{suffix}")
-                    else:
-                        tags.append(f"bazzite-{major}")
             break
     return major, sorted(set(tags))
 
@@ -102,7 +101,7 @@ def main():
     seq = next_daily_sequence(DATE)
     daily_tag = DATE if seq == 0 else f"{DATE}.{seq}"
 
-    major, bazzite_tags = extract_bazzite_tags()
+    major, base_tags = extract_base_tags()
 
     tags = [
         "latest",
@@ -111,7 +110,7 @@ def main():
     ]
     if major:
         tags.append(f"{major}.{daily_tag}")
-        tags.extend(bazzite_tags)
+        tags.extend(base_tags)
 
     meta_lines = [f"type=raw,value={tag}" for tag in tags]
     meta_lines.append(f"type=sha,enable={str(EVENT_NAME == 'pull_request').lower()}")
