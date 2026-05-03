@@ -34,7 +34,11 @@ def package_versions(owner, package):
         try:
             versions, page = [], 1
             while True:
-                response = requests.get(f"{prefix}/{owner}/packages/container/{package}/versions", headers=HEADERS, params={"page": page, "per_page": 100})
+                response = requests.get(
+                    f"{prefix}/{owner}/packages/container/{package}/versions",
+                    headers=HEADERS,
+                    params={"page": page, "per_page": 100},
+                )
                 if response.status_code in (403, 404):
                     break
                 response.raise_for_status()
@@ -53,9 +57,12 @@ def package_versions(owner, package):
 
 def next_daily_sequence(date_str):
     versions = package_versions(REPO_OWNER, IMAGE_NAME)
-    seen = {int(match.group(1) or 0) for version in versions
-            for tag in version.get("metadata", {}).get("container", {}).get("tags", [])
-            if (match := re.fullmatch(rf"{re.escape(date_str)}(?:\.(\d+))?", tag))}
+    seen = {
+        int(match.group(1) or 0)
+        for version in versions
+        for tag in version.get("metadata", {}).get("container", {}).get("tags", [])
+        if (match := re.fullmatch(rf"{re.escape(date_str)}(?:\.(\d+))?", tag))
+    }
     seq = 0
     while seq in seen:
         seq += 1
@@ -81,7 +88,15 @@ def extract_base_tags():
 
 def main():
     if not all([IMAGE_NAME, REPO_OWNER, DATE]):
-        missing = [k for k, v in [("IMAGE_NAME", IMAGE_NAME), ("REPO_OWNER", REPO_OWNER), ("DATE", DATE)] if not v]
+        missing = [
+            k
+            for k, v in [
+                ("IMAGE_NAME", IMAGE_NAME),
+                ("REPO_OWNER", REPO_OWNER),
+                ("DATE", DATE),
+            ]
+            if not v
+        ]
         print(f"Missing environment variables: {', '.join(missing)}", file=sys.stderr)
         sys.exit(1)
 
