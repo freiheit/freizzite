@@ -3,19 +3,27 @@ set -ouex pipefail
 
 # Common packages for all variants
 COMMON_PACKAGES=(
+    bitstream-vera-fonts-all
+    bitstreamverasansmono-nerd-fonts
     chezmoi
     chezmoi-bash-completion
     chezmoi-fish-completion
+    droidsansmono-nerd-fonts
     easyeffects
     etckeeper
     firacode-nerd-fonts
-    firamono-nerd-fonts.noarch
+    firamono-nerd-fonts
     htop
     joe
     jupp
+    ms-core-verdana-fonts
     nano
+    noto-nerd-fonts
     powertop
     tailscale
+    ubuntu-nerd-fonts
+    ubuntumono-nerd-fonts
+    ubuntusans-nerd-fonts
     wiremix
 )
 
