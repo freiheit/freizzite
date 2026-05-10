@@ -57,8 +57,6 @@ DESKTOP_PACKAGES=(
     zed
 
     # Handy tools
-    atuin
-    atuin-all-users
     thefuck
     plocate
     mtr
