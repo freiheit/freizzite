@@ -20,7 +20,11 @@ RETRY_WAIT = 5
 FEDORA_PATTERN = re.compile(r"\.fc\d\d")
 EPOCH_PATTERN = re.compile(r"^\d+:")
 STABLE_START_PATTERN = re.compile(r"\d\d\.\d")
-OTHER_START_PATTERN = lambda target: re.compile(rf"{target}-\d\d\.\d")
+
+
+def OTHER_START_PATTERN(target):
+    return re.compile(rf"{target}-\d\d\.\d")
+
 
 PATTERN_ADD = "\n| ✨ | {name} | | {version} |"
 PATTERN_CHANGE = "\n| 🔄 | {name} | {prev} | {new} |"
