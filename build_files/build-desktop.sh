@@ -57,6 +57,7 @@ DESKTOP_PACKAGES=(
     zed
 
     # Handy tools
+    fzf
     thefuck
     plocate
     mtr
