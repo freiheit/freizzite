@@ -19,6 +19,16 @@ repos:
       - id: check-xml
       - id: check-yaml
 
+  # commit style
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
+    hooks:
+      # CT1=conventional-commits style
+      - id: gitlint
+        args: [--contrib=CT1, --line-length=120, --msg-filename]
+      - id: gitlint-ci
+        args: [--contrib=CT1, --line-length=120, --msg-filename]
+
   # Linter for markdown
   # Requires: sudo apt install npm
   - repo: https://github.com/igorshubovych/markdownlint-cli
