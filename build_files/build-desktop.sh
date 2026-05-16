@@ -37,6 +37,7 @@ DESKTOP_PACKAGES=(
     git-filter-repo
     git-koji
     git-lfs
+    git-subtree
     jq
     nodejs
     nodejs-npm
@@ -52,6 +53,16 @@ DESKTOP_PACKAGES=(
     uv
     yamllint
     yq
+
+    # DevOps/Sysadmin tools
+    podman-machine
+    podman-tui
+    qemu
+    libvirt
+    qemu-kvm
+    virt-manager
+    edk2-ovmf
+    guestfs-tools
 
     # Try zed out
     zed
@@ -91,6 +102,7 @@ DESKTOP_SYSTEMCTL=(
     man-db-cache-update.service
     man-db-restart-cache-update.service
     plocate-updatedb.timer
+    podman.socket
 )
 
 dnf -y install --skip-unavailable --enable-repo=terra "${DESKTOP_PACKAGES[@]}"
