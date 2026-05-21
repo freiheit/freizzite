@@ -3,6 +3,7 @@ set -ouex pipefail
 
 # Common packages for all variants
 COMMON_PACKAGES=(
+    age
     bitstream-vera-fonts-all
     bitstreamverasansmono-nerd-fonts
     chezmoi
@@ -16,6 +17,7 @@ COMMON_PACKAGES=(
     htop
     joe
     jupp
+    keychain
     ms-core-verdana-fonts
     nano
     noto-nerd-fonts
