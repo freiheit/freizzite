@@ -41,6 +41,10 @@ jobs:
         variant:
           - base: bazzite-nvidia-open
             name: freizzite-nvidia-open
+          - base: bazzite-nvidia
+            name: freizzite-nvidia
+          - base: bazzite-dx-nvidia
+            name: freizzite-dx-nvidia
           - base: bazzite
             name: freizzite
           - base: bazzite-deck
