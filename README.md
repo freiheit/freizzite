@@ -12,11 +12,12 @@ Go look at those 2 places for useful info/links, etc.
 
 ## Variants
 
-| Variant               | Description                               |
-| --------------------- | ------------------------------------------|
-| freizzite             | KDE Desktop/Laptop with AMD/Intel/etc GPU |
-| freizzite-nvidia-open | KDE Desktop/Laptop with Nvidia GPU        |
-| freizzite-deck        | KDE SteamDeck or similar                  |
+| Variant                   | Description                                         |
+| ------------------------- | ----------------------------------------------------|
+| freizzite-dx-nvidia       | KDE Desktop/Laptop + Dev eXperience with Nvidia GPU |
+| freizzite-deck            | KDE SteamDeck or similar                            |
+| ~~freizzite~~             | ~~KDE Desktop/Laptop with AMD/Intel/etc GPU~~       |
+| ~~freizzite-nvidia-open~~ | ~~KDE Desktop/Laptop with Nvidia GPU~~              |
 
 ## Installation
 
@@ -25,8 +26,7 @@ Go look at those 2 places for useful info/links, etc.
 2. Run `sudo bootc status` and `sudo rpm-ostree status` and save the info somewhere.
 3. Optional: `sudo ostree admin pin 0`
 4. Depending which flavor you want, one of these:
-   * `sudo bootc switch --enforce-container-sigpolicy ghcr.io/freiheit/freizzite`
-   * `sudo bootc switch --enforce-container-sigpolicy ghcr.io/freiheit/freizzite-nvidia-open`
+   * `sudo bootc switch --enforce-container-sigpolicy ghcr.io/freiheit/freizzite-dx-nvidia`
    * `sudo bootc switch --enforce-container-sigpolicy ghcr.io/freiheit/freizzite-deck`
 5. reboot
 
