@@ -14,14 +14,17 @@ COMMON_PACKAGES=(
     etckeeper
     firacode-nerd-fonts
     firamono-nerd-fonts
+    google-roboto-fonts
     htop
     joe
     jupp
     keychain
+    ms-core-tahoma-fonts
     ms-core-verdana-fonts
     nano
     noto-nerd-fonts
     powertop
+    robotomono-nerd-fonts
     tailscale
     ubuntu-nerd-fonts
     ubuntumono-nerd-fonts
