@@ -49,6 +49,9 @@ DESKTOP_PACKAGES=(
     ShellCheck
     shfmt
     sqlite
+    sqlite-analyzer
+    sqlite-debug
+    sqlite-docs
     sqlite-tools
     uv
     yamllint
