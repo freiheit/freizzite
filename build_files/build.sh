@@ -37,3 +37,9 @@ case "${BUILD_VARIANT}" in
         /ctx/build-desktop.sh
         ;;
 esac
+
+###################
+# image branding  #
+###################
+# Last, after every dnf transaction: /usr/lib/os-release is rpm-owned.
+/ctx/image-info

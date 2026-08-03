@@ -66,6 +66,19 @@ Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
 
 ## Pending validation (watch; act only if they fail)
 
+- **os-release branding:** `build_files/image-info`, run last from `build.sh`,
+  modelled on upstream bazzite's `build_files/image-info`. Sets `NAME`,
+  `PRETTY_NAME`, `VARIANT`, `DEFAULT_HOSTNAME`, `HOME_URL`,
+  `BUG_REPORT_URL`, `BOOTLOADER_NAME` and `/etc/system-release` (the
+  grub2-mkconfig distributor). `ID`, `ID_LIKE`, `VARIANT_ID`, `CPE_NAME`,
+  `LOGO`, `ANSI_COLOR`, `IMAGE_ID` and `image-info.json` keep upstream values
+  on purpose, so nothing keying off `ID=bazzite` breaks. A trailing `grep -q`
+  fails the build if the seds matched nothing. Same change in freirora.
+  **Check** the `os-release` dump in the build log, then `hostnamectl` and the
+  GRUB menu on a deployed system. Open questions: `VERSION=` still reads
+  `"…(Kinoite)"` (fine); `/etc/system-release` drops upstream's `(Kinoite)`
+  suffix because `BASE_IMAGE_NAME` isn't available here.
+
 - **testing-tag builds:** `build.yml` computes its matrix in a preflight
   `matrix` job that probes `ghcr.io/ublue-os/<base>:testing`
   (`docker buildx imagetools inspect`) and adds a `testing` stream per variant
