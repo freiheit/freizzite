@@ -27,6 +27,16 @@ dnf5 config-manager addrepo --id=mozilla \
   --set=gpgkey=https://packages.mozilla.org/rpm/firefox/signing-key.gpg \
   --set=gpgcheck=1 --set=repo_gpgcheck=0 --set=priority=10
 
+# https://code.claude.com/docs/en/setup#dnf
+sudo tee /etc/yum.repos.d/claude-code.repo <<'EOF'
+[claude-code]
+name=Claude Code
+baseurl=https://downloads.claude.ai/claude-code/rpm/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://downloads.claude.ai/keys/claude-code.asc
+EOF
+
 DESKTOP_PACKAGES=(
     # I'd prefer non-flatpak browser so I can do 1password desktop integration easier
     firefox
@@ -37,6 +47,9 @@ DESKTOP_PACKAGES=(
 
     # terminal
     ghostty
+
+    # LLM CLI
+    claude-code
 )
 
 DESKTOP_TERRA_PACKAGES=(
