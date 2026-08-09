@@ -108,7 +108,6 @@ DESKTOP_TERRA_PACKAGES=(
     netcat
     rclone
     tldr
-    tealdeer
 
     # Prefer "native" over flathub so Rich Presence works better (terra)
     vesktop
