@@ -22,11 +22,22 @@ sed -i "s|^VARIANT=.*|VARIANT=\"$IMAGE_PRETTY_NAME (based on $UPSTREAM_PRETTY_NA
 sed -i "s|^DEFAULT_HOSTNAME=.*|DEFAULT_HOSTNAME=\"${IMAGE_PRETTY_NAME,}\"|" /usr/lib/os-release
 sed -i "s|^HOME_URL=.*|HOME_URL=\"$HOME_URL\"|" /usr/lib/os-release
 sed -i "s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"$BUG_SUPPORT_URL\"|" /usr/lib/os-release
+sed -i "s|^LOGO=.*|LOGO=${IMAGE_PRETTY_NAME,}-logo-icon|" /usr/lib/os-release
 
 # grub2-mkconfig takes its distributor from here
 echo "$IMAGE_PRETTY_NAME release $FEDORA_VERSION" >/etc/system-release
 
+# A new icon is invisible to GTK when the theme's cache does not list it
+if command -v gtk-update-icon-cache >/dev/null; then
+    gtk-update-icon-cache -f /usr/share/icons/hicolor
+fi
+
 # sed exits 0 when it matches nothing
 grep -q "^PRETTY_NAME=\"$IMAGE_PRETTY_NAME" /usr/lib/os-release
+test -f "/usr/share/icons/hicolor/scalable/apps/${IMAGE_PRETTY_NAME,}-logo-icon.svg"
+grep -q "/usr/share/ublue-os/${IMAGE_PRETTY_NAME,}/logo.txt" /etc/profile.d/bazzite-neofetch.sh
+test -f "/usr/share/ublue-os/${IMAGE_PRETTY_NAME,}/logo.txt"
+# our profile.d copy hardcodes this; catch bazzite moving it
+test -f /usr/share/ublue-os/bazzite/fastfetch.jsonc
 
 cat /usr/lib/os-release /etc/system-release
