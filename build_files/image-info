@@ -1,6 +1,6 @@
 #!/bin/bash
 # Freizzite: cosmetic rebranding of os-release, after upstream bazzite's
-# build_files/image-info. ID, ID_LIKE, VARIANT_ID, CPE_NAME, LOGO, IMAGE_ID and
+# build_files/image-info. ID, ID_LIKE, VARIANT_ID, CPE_NAME, IMAGE_ID and
 # image-info.json keep their upstream values so anything keying off them still
 # works. Runs last in build.sh: /usr/lib/os-release is rpm-owned.
 
@@ -11,6 +11,7 @@ UPSTREAM_PRETTY_NAME="Bazzite"
 HOME_URL="https://github.com/freiheit/freizzite"
 BUG_SUPPORT_URL="https://github.com/freiheit/freizzite/issues"
 
+# assign separately: a failed substitution inside `echo` would not trip set -e
 FEDORA_VERSION=$(rpm -E %fedora)
 
 # OS Release File. DOCUMENTATION_URL and SUPPORT_URL stay upstream.
@@ -28,15 +29,10 @@ sed -i "s|^LOGO=.*|LOGO=${IMAGE_PRETTY_NAME,}-logo-icon|" /usr/lib/os-release
 echo "$IMAGE_PRETTY_NAME release $FEDORA_VERSION" >/etc/system-release
 
 # A new icon is invisible to GTK when the theme's cache does not list it
-if command -v gtk-update-icon-cache >/dev/null; then
-    gtk-update-icon-cache -f /usr/share/icons/hicolor
-fi
+gtk-update-icon-cache -f /usr/share/icons/hicolor
 
 # sed exits 0 when it matches nothing
 grep -q "^PRETTY_NAME=\"$IMAGE_PRETTY_NAME" /usr/lib/os-release
-test -f "/usr/share/icons/hicolor/scalable/apps/${IMAGE_PRETTY_NAME,}-logo-icon.svg"
-grep -q "/usr/share/ublue-os/${IMAGE_PRETTY_NAME,}/logo.txt" /etc/profile.d/bazzite-neofetch.sh
-test -f "/usr/share/ublue-os/${IMAGE_PRETTY_NAME,}/logo.txt"
 # our profile.d copy hardcodes this; catch bazzite moving it
 test -f /usr/share/ublue-os/bazzite/fastfetch.jsonc
 
