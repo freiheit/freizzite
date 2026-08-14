@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Freizzite master logo. This is the only file to hand-edit; run `just logo`
-     to regenerate the installed icons, the fastfetch text logo and the PNGs.
-     The ids are load-bearing: render.py locates geometry by them. Everything
-     except #mouth is mirror-symmetric about the centre of #head. -->
+<!-- Freizzite master logo. This is the only logo file to hand-edit; run
+     `just freizzite-logo` to regenerate the icons, variants, fastfetch text
+     logo and PNGs. The ids are load-bearing: render.py locates geometry by
+     them. Everything except #mouth mirrors about the centre of #head. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
   <ellipse id="ear-left" style="stroke: rgb(0, 0, 0); fill: rgb(25, 15, 15);" cx="101.955" cy="250" rx="20.95" ry="39.106"/>
   <ellipse id="ear-right" style="stroke: rgb(0, 0, 0); fill: rgb(25, 15, 15);" cx="398.0450" cy="250" rx="20.95" ry="39.106"/>
