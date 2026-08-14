@@ -282,7 +282,7 @@ jobs:
       #- name: Rechunk with Chunkah
       #  id: rechunk
       #  run: |
-      #    sudo -E $(command -v just) rechunk \
+      #    just rechunk \
       #      ${IMAGE_NAME} \
       #      ${DEFAULT_TAG}
 
