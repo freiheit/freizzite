@@ -19,6 +19,17 @@ done
 # Copy the contents of system_files/ into the image
 cp -avf "/ctx/system_files"/. /
 
+# Snapshot /var so we can tell what this build adds. /var is machine-local on
+# bootc and is only seeded on a fresh install, so anything created here has to
+# be recreated by tmpfiles.d rather than shipped in the image.
+# (/var/cache and /var/log are build mounts, not part of the image.)
+var_dirs() {
+    find /var -mindepth 1 \
+        \( -path /var/cache -o -path /var/log -o -path /var/tmp \) -prune -o \
+        -type d -print | sort
+}
+var_dirs >/tmp/var-dirs-before
+
 ######################
 # common build steps #
 ######################
@@ -37,6 +48,48 @@ case "${BUILD_VARIANT}" in
         /ctx/build-desktop.sh
         ;;
 esac
+
+####################
+# image hygiene    #
+####################
+
+# 1Password's scriptlets create these groups directly instead of shipping
+# sysusers.d, which `bootc container lint` flags. Record the GIDs that were
+# actually allocated so they stay stable across rebuilds.
+# `docker` is flagged too but comes from the bazzite-dx base -- pinning a GID we
+# do not own would fight upstream if they ever change it.
+{
+    for grp in onepassword onepassword-cli onepassword-mcp; do
+        # `if` so a missing group is skipped: getent exits 2 and pipefail would
+        # otherwise abort the build
+        if gid=$(getent group "$grp" | cut -d: -f3) && [ -n "$gid" ]; then
+            echo "g $grp $gid -"
+        fi
+    done
+} >/usr/lib/sysusers.d/freizzite-1password.conf
+[ -s /usr/lib/sysusers.d/freizzite-1password.conf ] ||
+    rm -f /usr/lib/sysusers.d/freizzite-1password.conf
+
+# dnf4 state (dragged in by etckeeper-dnf/dnf-plugins-core), rpm-state and
+# /run/dnf are build artifacts. `dnf clean all` does not touch these -- the
+# caches it clears live on a build mount and never enter the image. Drop them
+# before the /var snapshot so we do not bother recreating them at boot.
+rm -rf /var/lib/dnf /var/lib/rpm-state /run/dnf
+
+# Everything else this build added under /var gets a tmpfiles.d entry (so it is
+# recreated on a fresh deploy) and is then removed from the image.
+var_dirs >/tmp/var-dirs-after
+{
+    echo "# Generated at image build time by build_files/build.sh"
+    comm -13 /tmp/var-dirs-before /tmp/var-dirs-after | while read -r d; do
+        printf 'd %s 0%s %s %s - -\n' \
+            "$d" "$(stat -c '%a' "$d")" "$(stat -c '%U' "$d")" "$(stat -c '%G' "$d")"
+    done
+} >/usr/lib/tmpfiles.d/freizzite-var.conf
+
+comm -13 /tmp/var-dirs-before /tmp/var-dirs-after | tac | while read -r d; do
+    rm -rf "$d"
+done
 
 ###################
 # image branding  #
