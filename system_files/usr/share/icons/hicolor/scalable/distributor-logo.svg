@@ -12,6 +12,6 @@
   <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 10; stroke-linecap: round;" d="M 387.711 40.174 C 392.559 65.711 310.418 191.67 306.146 146.877" transform="matrix(-1.000000, 0.000000, 0.000000, -1.000000, 694.064001, 196.597994)"/>
   <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(6, 5, 5);" cx="387.64" cy="58.101" rx="15.586" ry="19.107"/>
   <rect x="176.537" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0);"/>
-  <rect x="290.504" y="194.413" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0); fill: rgb(3, 3, 3);"/>
+  <rect x="290.504" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0); fill: rgb(3, 3, 3);"/>
   <text style="font-family: 'Liberation Sans', Arial, sans-serif; font-size: 28px; white-space: pre;" x="217.877" y="268.156" transform="matrix(0.000000, -6.930030, 6.678320, 0.000000, -1472.765961, 1817.672679)">f</text>
 </svg>
