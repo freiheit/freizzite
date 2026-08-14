@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="81.005 38.4981 338.27 305.9159" width="338.27px" height="305.916px">
   <ellipse style="stroke: rgb(0, 0, 0); fill: rgb(25, 15, 15);" cx="101.955" cy="250" rx="20.95" ry="39.106"/>
-  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(32, 15, 15);" cx="398.325" cy="250" rx="20.95" ry="39.106"/>
+  <ellipse style="stroke: rgb(0, 0, 0); fill: rgb(25, 15, 15);" cx="398.0450" cy="250" rx="20.95" ry="39.106"/>
   <g>
-    <rect x="102.234" y="155.587" width="295.531" height="188.827" style="stroke: rgb(0, 0, 0); fill: rgb(162, 16, 16);"/>
+    <rect x="102.2345" y="155.587" width="295.531" height="188.827" style="stroke: rgb(0, 0, 0); fill: rgb(162, 16, 16);"/>
   </g>
-  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 1;" d="M 192.179 154.748 C 197.027 129.211 114.886 3.252 110.614 48.045"/>
+  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 1;" d="M 191.6210 154.748 C 197.027 129.211 114.886 3.252 110.614 48.045"/>
   <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(9, 9, 9);" cx="110.893" cy="56.425" rx="8.659" ry="10.615"/>
-  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 1; transform-origin: 347.032px 98.299px;" d="M 387.711 40.174 C 392.559 65.711 310.418 191.67 306.146 146.877" transform="matrix(-1, 0, 0, -1, 0, 0)"/>
-  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(6, 5, 5);" cx="-387.64" cy="58.101" rx="8.659" ry="10.615" transform="matrix(-1, 0, 0, 1, 0, 0)"/>
+  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 1;" d="M 308.3790 154.7480 C 302.9730 129.2110 385.1140 3.2520 389.3860 48.0450"/>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(9, 9, 9);" cx="389.1070" cy="56.425" rx="8.659" ry="10.615"/>
   <rect x="176.537" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0);"/>
-  <rect x="290.504" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0); fill: rgb(3, 3, 3);"/>
+  <rect x="293.2950" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0);"/>
   <text style="font-family: Arial, sans-serif; font-size: 28px; white-space: pre; transform-origin: 221.814px 258.428px;" x="217.877" y="268.156" transform="matrix(0, -6.93002987, 6.67831993, 0, 31.28493902, 22.06695828)">f</text>
 </svg>
