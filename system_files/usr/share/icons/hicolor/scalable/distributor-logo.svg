@@ -1,1 +1,17 @@
-apps/freizzite-logo-icon.svg
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.625 10.875 497.750 497.750">
+  <ellipse style="stroke: rgb(0, 0, 0); fill: rgb(25, 15, 15);" cx="101.955" cy="250" rx="20.95" ry="39.106"/>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(32, 15, 15);" cx="398.325" cy="250" rx="20.95" ry="39.106"/>
+  <rect x="224.022" y="337.988" width="48.603" height="35.754" style="stroke: rgb(0, 0, 0); fill: rgb(71, 30, 30);"/>
+  <g>
+    <rect x="102.234" y="155.587" width="295.531" height="188.827" style="stroke: rgb(0, 0, 0); fill: rgb(162, 16, 16);"/>
+  </g>
+  <rect x="38.547" y="368.715" width="421.788" height="116.76" style="stroke: rgb(0, 0, 0); fill: rgb(162, 16, 16);"/>
+  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 10; stroke-linecap: round;" d="M 192.179 154.748 C 197.027 129.211 114.886 3.252 110.614 48.045"/>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(9, 9, 9);" cx="110.893" cy="56.425" rx="15.586" ry="19.107"/>
+  <path style="fill: none; stroke: rgb(0, 0, 0); stroke-width: 10; stroke-linecap: round;" d="M 387.711 40.174 C 392.559 65.711 310.418 191.67 306.146 146.877" transform="matrix(-1.000000, 0.000000, 0.000000, -1.000000, 694.064001, 196.597994)"/>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 1; fill: rgb(6, 5, 5);" cx="387.64" cy="58.101" rx="15.586" ry="19.107"/>
+  <rect x="176.537" y="195.531" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0);"/>
+  <rect x="290.504" y="194.413" width="30.168" height="29.609" style="stroke: rgb(0, 0, 0); fill: rgb(3, 3, 3);"/>
+  <text style="font-family: 'Liberation Sans', Arial, sans-serif; font-size: 28px; white-space: pre;" x="217.877" y="268.156" transform="matrix(0.000000, -6.930030, 6.678320, 0.000000, -1472.765961, 1817.672679)">f</text>
+</svg>
