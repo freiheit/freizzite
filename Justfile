@@ -1,6 +1,9 @@
 set dotenv-filename := "image-template.env"
 set dotenv-load
 
+# Freizzite: fork-only recipes live here, to keep this file mergeable
+import 'freizzite.just'
+
 export image_name := env_var("IMAGE_NAME")
 export repo_organization := env_var("REPO_ORGANIZATION")
 export repo_name := env_var("REPO_NAME")
