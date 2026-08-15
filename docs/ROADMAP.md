@@ -83,6 +83,16 @@ Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
   `crun: unknown version specified`, not a hang). **Watch:** 26.04 is a
   preview image; revert to 24.04 if it misbehaves. `build-disk.yml` is still
   on 24.04 and could hit the same thing — move it if this holds up.
+  **Caught late:** 26.04 also ignores `sudo -E` ("preserving the entire
+  environment is not supported"), which silently dropped every matrix override
+  in the Build Image step. `just` fell back to `image-template.env`, so the
+  2026-08-15 run published `freizzite-deck:latest`/`:testing` built from the
+  **dx-nvidia** base under deck tags. Fixed by passing the values through
+  `sudo env …`, plus an assertion that the built image's
+  `io.github.freiheit.build.base-ref` label matches the intended base — the
+  failure was invisible precisely because dotenv has a default for every name
+  CI overrides. Dated tags from that run still point at the wrong content and
+  want deleting.
 
 - **os-release branding:** `build_files/image-info`, run last from `build.sh`,
   modelled on upstream bazzite's `build_files/image-info`. Sets `NAME`,

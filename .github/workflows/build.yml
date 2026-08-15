@@ -298,9 +298,34 @@ jobs:
             echo "::warning::upstream digest unresolved; building against the floating :${STREAM} tag"
           fi
 
-          sudo -E $(command -v just) build \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          # `sudo -E` is ignored on these runners ("preserving the entire
+          # environment is not supported"), which silently dropped every matrix
+          # override -- just then fell back to image-template.env and built
+          # freizzite-deck from the dx-nvidia base. Pass the values through
+          # `env` so they do not depend on sudo's environment policy.
+          sudo env \
+            IMAGE_NAME="${IMAGE_NAME}" \
+            BASE_IMAGE="${BASE_IMAGE}" \
+            BASE_TAG="${BASE_TAG}" \
+            BUILD_VARIANT="${BUILD_VARIANT}" \
+            BUILD_BASE_DIGEST="${BUILD_BASE_DIGEST}" \
+            IMAGE_DESC="${IMAGE_DESC}" \
+            DEFAULT_TAG="${DEFAULT_TAG}" \
+            REGISTRY_AUTH_FILE="${REGISTRY_AUTH_FILE}" \
+            "$(command -v just)" build "${IMAGE_NAME}" "${DEFAULT_TAG}"
+
+          # The failure above was silent: dotenv supplies a default for every
+          # name CI overrides, so a dropped variable builds the wrong image
+          # under the right tag. Assert what actually got built.
+          want="ghcr.io/ublue-os/${BASE_IMAGE}:${STREAM}"
+          got=$(sudo podman image inspect "${IMAGE_NAME}:${DEFAULT_TAG}" \
+            | jq -r '.[0].Config.Labels["io.github.freiheit.build.base-ref"]
+                     // .[0].Labels["io.github.freiheit.build.base-ref"] // ""')
+          if [ "${got}" != "${want}" ]; then
+            echo "::error::built from ${got}, expected ${want}"
+            exit 1
+          fi
+          echo "verified: ${IMAGE_NAME}:${DEFAULT_TAG} built from ${got}"
 
       # This is optional, this provides smaller delta updates
       # Freizzite: seeded variant reuses the previous published image's chunk
