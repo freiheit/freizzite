@@ -223,11 +223,11 @@ jobs:
       # one-line RUNs took ~30min each and hit the Build Image timeout. Both
       # bazzite-dx and aurora use this action for the same reason.
       #
-      # Must run BEFORE the space-clearing step: that reclaims the runner's
-      # temp disk, and this action skips itself when /mnt is not a mountpoint
-      # ("/mnt mountpoint not detected. Skipping BTRFS loopback..."). aurora
-      # orders it this way too. Non-fatal either way -- if the loopback cannot
-      # be made, the build proceeds as it did before.
+      # Currently a no-op here: the action skips itself unless /mnt is a
+      # mountpoint, and ubuntu-24.04 runners have no /mnt even as the first
+      # step after checkout (aurora, where this works, runs ubuntu-26.04).
+      # Kept ahead of the space-clearing step and left in place so it starts
+      # working if the runner image regains a temp disk. Non-fatal either way.
       - name: Mount BTRFS for podman storage
         uses: ublue-os/container-storage-action@25e05be4948f77746938687877829d15c5038036
         continue-on-error: true
@@ -239,6 +239,19 @@ jobs:
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
         timeout-minutes: 10
+
+      # Freizzite: ground truth for the slow-layer problem. A single trivial
+      # RUN was taking ~30min, which points at podman's storage driver or at
+      # plain disk exhaustion -- this says which. Cheap; drop it once the
+      # cause is settled.
+      - name: Runner storage facts
+        run: |
+          df -h / /mnt 2>&1 || true
+          echo "---"
+          sudo podman info --format \
+            'driver={{ .Store.GraphDriverName }} root={{ .Store.GraphRoot }}'
+          echo "---"
+          findmnt -no FSTYPE,SOURCE,TARGET / /mnt /var/lib/containers 2>&1 || true
 
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 #v4.0.0
