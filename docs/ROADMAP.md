@@ -119,4 +119,4 @@ Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
 
 ## Done (validated)
 
-- *(move items here once fully validated)*
+- _(move items here once fully validated)_
