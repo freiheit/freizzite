@@ -32,8 +32,12 @@ ENV BUILD_VARIANT=${BUILD_VARIANT}
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
-RUN rm /opt && mkdir /opt
-RUN rm -rf /usr/local && mkdir -p /usr/local /usr/local/bin /usr/local/etc /usr/local/games /usr/local/include /usr/local/lib /usr/local/man /usr/local/sbin /usr/local/share /usr/local/src
+# Freizzite: one RUN, not two. Every layer commit copies the whole image when
+# podman falls back to the vfs storage driver, and these two took ~30 minutes
+# each on a runner without a proper storage backend.
+RUN rm /opt && mkdir /opt \
+    && rm -rf /usr/local \
+    && mkdir -p /usr/local /usr/local/bin /usr/local/etc /usr/local/games /usr/local/include /usr/local/lib /usr/local/man /usr/local/sbin /usr/local/share /usr/local/src
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script
