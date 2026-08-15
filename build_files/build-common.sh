@@ -5,14 +5,11 @@ set -ouex pipefail
 source /ctx/lib-verify.sh
 
 # Common packages for all variants
+# Verified installed after the transaction; a missing one fails the build.
 COMMON_PACKAGES=(
     age
     bitstream-vera-fonts-all
-    bitstreamverasansmono-nerd-fonts
     chezmoi
-    chezmoi-bash-completion
-    chezmoi-fish-completion
-    droidsansmono-nerd-fonts
     etckeeper
     firacode-nerd-fonts
     firamono-nerd-fonts
@@ -26,10 +23,19 @@ COMMON_PACKAGES=(
     ms-core-tahoma-fonts
     ms-core-verdana-fonts
     nano
-    noto-nerd-fonts
     powertop
-    robotomono-nerd-fonts
     tailscale
+)
+
+# Installed the same way but not verified: nice to have, not worth a red
+# build when terra lags a Fedora bump.
+COMMON_PACKAGES_OPTIONAL=(
+    bitstreamverasansmono-nerd-fonts
+    chezmoi-bash-completion
+    chezmoi-fish-completion
+    droidsansmono-nerd-fonts
+    noto-nerd-fonts
+    robotomono-nerd-fonts
     ubuntu-nerd-fonts
     ubuntumono-nerd-fonts
     ubuntusans-nerd-fonts
@@ -44,7 +50,8 @@ COMMON_SYSTEMCTL=(
 # Enable tailscale repo
 dnf5 config-manager setopt tailscale-stable.enabled=true
 
-dnf5 -y install --skip-unavailable --skip-broken --enable-repo=terra "${COMMON_PACKAGES[@]}"
+dnf5 -y install --skip-unavailable --skip-broken --enable-repo=terra \
+    "${COMMON_PACKAGES[@]}" "${COMMON_PACKAGES_OPTIONAL[@]}"
 
 systemctl enable "${COMMON_SYSTEMCTL[@]}"
 
