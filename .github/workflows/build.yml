@@ -179,7 +179,12 @@ jobs:
     # every quiet poll. Guarding on `any` makes the nothing-to-do case a clean
     # grey "Skipped" instead.
     if: needs.matrix.outputs.any == 'true'
-    runs-on: ubuntu-24.04
+    # Freizzite: 26.04 (public preview) rather than 24.04, because trivial RUN
+    # layers were taking ~30min each on 24.04 and aurora builds the same class
+    # of image on 26.04 without that. Revert if the preview misbehaves.
+    # Renovate's github-runners manager tracks this, so it moves on its own
+    # once a newer stable runner exists.
+    runs-on: ubuntu-26.04
 
     # Per-step timeouts below are 2x the longest observed successful run of
     # that step, excluding known-degraded runs (Build Image has succeeded at

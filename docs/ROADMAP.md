@@ -66,6 +66,22 @@ Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
 
 ## Pending validation (watch; act only if they fail)
 
+- **Slow build layers / `ubuntu-26.04`:** on 24.04 runners, two one-line
+  `RUN`s (`/opt`, `/usr/local`) took ~30min *each* and hit the Build Image
+  timeout — before `build.sh` ever ran. Both were merged into one layer, and
+  `build_push` now runs on `ubuntu-26.04` (public preview), which is what
+  aurora uses. A temporary **Runner storage facts** step prints
+  `df`/`podman info --format driver=`/`findmnt`; if it reports `driver=vfs`
+  that is the cause and the fix is forcing overlay in
+  `/etc/containers/storage.conf`. **Delete that step once the cause is
+  settled.** `container-storage-action` is kept as insurance but is inert
+  here: it only mounts a spare drive when `/mnt` exists, which is the small
+  72G runner — no `/mnt` means the 145G runner with 70–110G free, so disk
+  exhaustion is *not* the problem (see ublue-os/image-template#259).
+  Unrelated: ublue-os/image-template#249 is a different failure (an immediate
+  `crun: unknown version specified`, not a hang). `build-disk.yml` is still on
+  24.04; move it too if 26.04 proves out.
+
 - **os-release branding:** `build_files/image-info`, run last from `build.sh`,
   modelled on upstream bazzite's `build_files/image-info`. Sets `NAME`,
   `PRETTY_NAME`, `VARIANT`, `DEFAULT_HOSTNAME`, `HOME_URL`,
