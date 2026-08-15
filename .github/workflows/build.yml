@@ -72,6 +72,15 @@ jobs:
             # freizzite-nvidia|bazzite-nvidia|Freizzite - customized Bazzite (NVIDIA drivers)
             # freizzite-nvidia-open|bazzite-nvidia-open|Freizzite - customized Bazzite (open NVIDIA drivers)
           LABEL_NS: "io.github.freiheit.build"
+          # Vendor repos that move independently of the base image. One
+          # "<package> <repo-id> <baseurl>" per line; dnf expands $releasever
+          # inside the query container. Anything installed from the base image
+          # or from a COPR is already covered by the base-digest check.
+          TRACKED: |
+            firefox     mozilla https://packages.mozilla.org/rpm/firefox
+            claude-code claude  https://downloads.claude.ai/claude-code/rpm/stable
+            code        vscode  https://packages.microsoft.com/yumrepos/vscode
+            vesktop     terra   https://repos.fyralabs.com/terra$releasever
           # Rebuild at least every 3 days even if the base has not moved, so
           # floating package repos (Firefox, 1Password, vscode, terra, COPRs)
           # do not go stale.
@@ -107,6 +116,14 @@ jobs:
             FORCE_REASON="weekly safety-net cron (${FORCE_CRON})"
           fi
           export FORCE FORCE_REASON HEAD_SHA LABEL_NS REG_USER REG_PASS MAX_AGE_HOURS
+
+          # Once per poll, not per target: the terra query alone pulls ~850KB.
+          read -r PKGS_NEWEST_EPOCH PKGS_NEWEST_NAME < <(
+            .github/scripts/tracked-packages.sh) || true
+          export PKGS_NEWEST_EPOCH PKGS_NEWEST_NAME
+          echo "tracked packages: newest is ${PKGS_NEWEST_NAME:-none}" \
+               "${PKGS_NEWEST_EPOCH:+($(date -u -d "@${PKGS_NEWEST_EPOCH}" \
+               +%Y-%m-%dT%H:%M:%SZ))}"
 
           targets=()
           while IFS='|' read -r name base desc; do
