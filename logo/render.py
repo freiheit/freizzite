@@ -170,8 +170,14 @@ def text_logo(svg):
         float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split()
     ]
     rows = round(COLS * vh / vw / 2) * 2  # half-cells are square by construction
-    u2c = lambda u: (u - vx) / vw * COLS
-    u2r = lambda u: (u - vy) / vh * rows
+
+    def u2c(u):
+        """User units to cell columns."""
+        return (u - vx) / vw * COLS
+
+    def u2r(u):
+        """User units to half-cell rows."""
+        return (u - vy) / vh * rows
 
     body = drop(svg, "antenna-left", "antenna-right", "bulb-left", "bulb-right")
     Path("/tmp/_body.svg").write_text(body)
@@ -277,7 +283,10 @@ def text_logo(svg):
             else:
                 line += BG[bot] + FG[top] + "▀"
         out.append(line.rstrip() + "\033[0m")
-    plain = lambda s: re.sub(r"\033\[[0-9;]*m", "", s).strip()
+
+    def plain(s):
+        return re.sub(r"\033\[[0-9;]*m", "", s).strip()
+
     while out and not plain(out[0]):
         out.pop(0)
     while out and not plain(out[-1]):
