@@ -32,6 +32,7 @@ ICONS = ROOT / "system_files/usr/share/icons/hicolor/scalable"
 COLS = 36  # width of the fastfetch logo, in terminal cells
 SS = 8  # supersample per half-cell; kills antialiasing without dithering
 HALO = 3  # white keyline, in user units either side
+PALETTE_SIZE = 16  # png palette entries; the art only needs a handful
 PNG_SIZES = (2048, 1280, 1024, 512, 256, 128, 64, 32)  # longest side, px
 GAIN, SAT = 0.22, 0.80  # KDE variant: lighter and less saturated for dark panels
 
@@ -298,12 +299,14 @@ def text_logo(svg):
 def shrink(path):
     """Palette-encode, then losslessly recompress.
 
-    The art is flat colour, so a 256-entry palette is visually identical to the
-    RGBA original and about a quarter of the size; oxipng takes another fifth
-    off. Doing it here keeps ImgBot from raising PRs against these files.
+    The art is flat colour, so a 16-entry palette is visually identical to the
+    RGBA original at a fraction of the size; oxipng takes another slice off.
+    Doing it here keeps ImgBot from raising PRs against these files. Anything
+    above 16 is wasted: the octree settles at ~39 entries, so 64 and 256 come
+    out byte-for-byte identical.
     """
     with Image.open(path) as im:
-        im.convert("RGBA").quantize(colors=256, method=Image.FASTOCTREE).save(
+        im.convert("RGBA").quantize(colors=PALETTE_SIZE, method=Image.FASTOCTREE).save(
             path, optimize=True
         )
     oxipng.optimize(path, level=4)
