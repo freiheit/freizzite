@@ -212,6 +212,10 @@ jobs:
       # Digest the gate resolved for this target. The build pins the base to
       # exactly this, so the label we record cannot drift from what was built.
       BASE_DIGEST: ${{ matrix.target.base_digest }}
+      # Freizzite: podman runs under `sudo -E`, so its credentials must not
+      # depend on whether sudo preserves HOME. Pin the authfile for every
+      # podman call, root or not.
+      REGISTRY_AUTH_FILE: /tmp/podman-auth.json
 
     permissions:
       contents: read
@@ -361,6 +365,22 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Freizzite: docker/login-action only writes credentials for the runner
+      # user, but every podman call here is `sudo -E podman`, i.e. root. That
+      # worked only while sudo preserved HOME; when it stopped, root podman
+      # fell back to anonymous. Public blobs still read, so it surfaced late as
+      # "Requesting bearer token: 403 Forbidden" on the first write. Log podman
+      # in on its own -- bazzite-dx and aurora both do this alongside docker,
+      # which cosign and oras still need.
+      - name: Login podman to GitHub Container Registry
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          echo "${REGISTRY_TOKEN}" \
+            | sudo -E podman login ghcr.io -u "${REGISTRY_USER}" --password-stdin
 
       - name: Push To GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
