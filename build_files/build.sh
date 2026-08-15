@@ -16,6 +16,21 @@ for repo in /etc/yum.repos.d/terra*.repo; do
     fi
 done
 
+# Terra publishes one repo per Fedora release and lags the bump on the
+# :testing stream. terra$releasever then has no mirrors, dnf treats the repo as
+# unusable, and --skip-unavailable drops every terra package without failing.
+# Pin to the previous release until the current one is published; the check
+# stops matching (and the pin disappears) as soon as it is.
+terra_release="$(rpm -E %fedora)"
+# no pipe into grep -q: it exits on first match, and the resulting SIGPIPE
+# would trip pipefail even on success
+terra_metalink="$(curl -sfL \
+    "https://tetsudou.fyralabs.com/metalink?repo=terra${terra_release}&arch=$(uname -m)" || true)"
+if ! grep -q '<url' <<<"${terra_metalink}"; then
+    echo "NOTE: terra${terra_release} has no mirrors; falling back to terra$((terra_release - 1))"
+    sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
+fi
+
 # Copy the contents of system_files/ into the image
 cp -avf "/ctx/system_files"/. /
 
