@@ -158,5 +158,7 @@ npm completion > /etc/bash_completion.d/npm
 # `bootc container lint` flags them under var-tmpfiles.
 rm -rf /var/tmp/.config /var/tmp/.cache /var/tmp/.local
 
-# Fail the build if any requested package didn't actually get installed
-verify_packages_installed "${DESKTOP_PACKAGES[@]}"
+# Fail the build if any requested package didn't actually get installed.
+# Both lists: `--skip-unavailable` silently drops anything unresolvable, so
+# an unverified list is a list that can quietly go missing.
+verify_packages_installed "${DESKTOP_PACKAGES[@]}" "${DESKTOP_TERRA_PACKAGES[@]}"
