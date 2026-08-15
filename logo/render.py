@@ -7,10 +7,11 @@ Outputs:
   system_files/.../scalable/apps/freizzite-logo-icon.svg   head only, os-release LOGO=
   system_files/.../scalable/distributor-logo.svg           full robot, KDE launcher
   system_files/.../ublue-os/freizzite/logo.txt             fastfetch logo
-  logo/freizzite-logo-head.svg          head only, browsable copy
-  logo/freizzite-logo-head-short.svg    head with the antennae pulled in
-  logo/freizzite-logo-512.png           square PNG, docs/ArtifactHub
-  logo/freizzite-logo-1280x640.png      wide banner PNG, social preview
+  logo/freizzite-logo-head.svg          browsable copies of each variant
+  logo/freizzite-logo-head-short.svg
+  logo/freizzite-logo-kde.svg
+  logo/<name>-{2048,1280,1024,512,256,128,64,32}.png   for every svg in logo/
+  logo/freizzite-logo-banner-1280x640.png              social preview
 
 Geometry is read from the master by element id, so editing the master is
 enough -- no constants are duplicated here.
@@ -29,6 +30,7 @@ ICONS = ROOT / "system_files/usr/share/icons/hicolor/scalable"
 COLS = 36  # width of the fastfetch logo, in terminal cells
 SS = 8  # supersample per half-cell; kills antialiasing without dithering
 HALO = 3  # white keyline, in user units either side
+PNG_SIZES = (2048, 1280, 1024, 512, 256, 128, 64, 32)  # longest side, px
 GAIN, SAT = 0.22, 0.80  # KDE variant: lighter and less saturated for dark panels
 
 # the silhouette. #eye-* and #mouth are deliberately absent: a keyline on the
@@ -282,8 +284,25 @@ def text_logo(svg):
     return "\n".join(out) + "\n"
 
 
-def png(svg, path, w, h):
-    """Render at w x h, cropping the frame to that aspect around the content."""
+def png_set(path, sizes=PNG_SIZES):
+    """Rasterise one svg at each size, scaled so the longest side matches."""
+    svg = path.read_text()
+    _, _, vw, vh = (
+        float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split()
+    )
+    for n in sizes:
+        w, h = (n, round(n * vh / vw)) if vw >= vh else (round(n * vw / vh), n)
+        cairosvg.svg2png(
+            url=str(path),
+            write_to=str(path.with_name(f"{path.stem}-{n}.png")),
+            output_width=w,
+            output_height=h,
+        )
+    print(f"  {path.stem}-*.png ({len(sizes)} sizes)")
+
+
+def banner(svg, path, w, h):
+    """Crop the frame to w:h around the content, for a social preview."""
     x0, y0, x1, y1 = bbox(svg)
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     vh = (y1 - y0) * 1.02
@@ -319,6 +338,7 @@ def main():
         # browsable copies of the derived shapes, not installed into the image
         ROOT / "logo/freizzite-logo-head.svg": head,
         ROOT / "logo/freizzite-logo-head-short.svg": short,
+        ROOT / "logo/freizzite-logo-kde.svg": full,
         ROOT / "system_files/usr/share/ublue-os/freizzite/logo.txt": text_logo(
             reframe(plain, axis)
         ),
@@ -337,13 +357,14 @@ def main():
         path.write_text(content)
         print(f"  {path.relative_to(ROOT)}")
 
-    png(head, ROOT / "logo/freizzite-logo-512.png", 512, 512)
-    png(
+    banner(
         drop(plain, *ANTENNAE),
-        ROOT / "logo/freizzite-logo-1280x640.png",
+        ROOT / "logo/freizzite-logo-banner-1280x640.png",
         1280,
         640,
     )
+    for svg in sorted((ROOT / "logo").glob("*.svg")):
+        png_set(svg)
 
 
 if __name__ == "__main__":
