@@ -153,5 +153,10 @@ HOME=/var/tmp op --cache=false completion bash > /etc/bash_completion.d/op
 
 npm completion > /etc/bash_completion.d/npm
 
+# The HOME=/var/tmp redirects above leave dotfiles (and an op daemon socket)
+# behind. /var/tmp is not a build mount, so they ship in the image and
+# `bootc container lint` flags them under var-tmpfiles.
+rm -rf /var/tmp/.config /var/tmp/.cache /var/tmp/.local
+
 # Fail the build if any requested package didn't actually get installed
 verify_packages_installed "${DESKTOP_PACKAGES[@]}"
