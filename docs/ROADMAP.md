@@ -67,20 +67,22 @@ Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
 ## Pending validation (watch; act only if they fail)
 
 - **Slow build layers / `ubuntu-26.04`:** on 24.04 runners, two one-line
-  `RUN`s (`/opt`, `/usr/local`) took ~30min *each* and hit the Build Image
-  timeout — before `build.sh` ever ran. Both were merged into one layer, and
-  `build_push` now runs on `ubuntu-26.04` (public preview), which is what
-  aurora uses. A temporary **Runner storage facts** step prints
-  `df`/`podman info --format driver=`/`findmnt`; if it reports `driver=vfs`
-  that is the cause and the fix is forcing overlay in
-  `/etc/containers/storage.conf`. **Delete that step once the cause is
-  settled.** `container-storage-action` is kept as insurance but is inert
-  here: it only mounts a spare drive when `/mnt` exists, which is the small
-  72G runner — no `/mnt` means the 145G runner with 70–110G free, so disk
-  exhaustion is *not* the problem (see ublue-os/image-template#259).
-  Unrelated: ublue-os/image-template#249 is a different failure (an immediate
-  `crun: unknown version specified`, not a hang). `build-disk.yml` is still on
-  24.04; move it too if 26.04 proves out.
+  `RUN`s (`/opt`, `/usr/local`) took ~30min _each_ and hit the Build Image
+  timeout — before `build.sh` ever ran; the same runs corrupted the rpmdb
+  during rechunk (`database disk image is malformed`). Fixed by moving
+  `build_push` to `ubuntu-26.04` (public preview), which is what aurora uses.
+  On 26.04 a measurement step reported `driver=overlay` with 121G free and
+  that `RUN` dropped to ~2min, so the storage driver was never the problem —
+  the 24.04 runs had almost certainly landed on the 72G runner pool, where a
+  50GB+ image leaves ~20–47G and thrashes. Both symptoms fit disk pressure.
+  The two `RUN`s were also merged into one layer; worth keeping, but that was
+  not the cure. `container-storage-action` stays as insurance and is inert
+  here: it only mounts a spare drive when `/mnt` exists, which is the 72G
+  runner (see ublue-os/image-template#259). Unrelated:
+  ublue-os/image-template#249 is a different failure (an immediate
+  `crun: unknown version specified`, not a hang). **Watch:** 26.04 is a
+  preview image; revert to 24.04 if it misbehaves. `build-disk.yml` is still
+  on 24.04 and could hit the same thing — move it if this holds up.
 
 - **os-release branding:** `build_files/image-info`, run last from `build.sh`,
   modelled on upstream bazzite's `build_files/image-info`. Sets `NAME`,
