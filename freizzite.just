@@ -4,4 +4,4 @@
 # Regenerate the logo artefacts from logo/freizzite-logo.svg
 [group('Freizzite')]
 freizzite-logo:
-    uv run --with cairosvg --with pillow logo/render.py
+    uv run --with cairosvg --with pillow --with pyoxipng logo/render.py

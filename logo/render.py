@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate every derived logo artefact from logo/freizzite-logo.svg.
 
-Run it with `just freizzite-logo`, which supplies cairosvg and pillow via uv.
+Run it with `just freizzite-logo`, which supplies the dependencies via uv.
 
 Outputs:
   system_files/.../scalable/apps/freizzite-logo-icon.svg   head only, os-release LOGO=
@@ -22,6 +22,7 @@ import re
 from pathlib import Path
 
 import cairosvg
+import oxipng
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -294,6 +295,20 @@ def text_logo(svg):
     return "\n".join(out) + "\n"
 
 
+def shrink(path):
+    """Palette-encode, then losslessly recompress.
+
+    The art is flat colour, so a 256-entry palette is visually identical to the
+    RGBA original and about a quarter of the size; oxipng takes another fifth
+    off. Doing it here keeps ImgBot from raising PRs against these files.
+    """
+    with Image.open(path) as im:
+        im.convert("RGBA").quantize(colors=256, method=Image.FASTOCTREE).save(
+            path, optimize=True
+        )
+    oxipng.optimize(path, level=4)
+
+
 def png_set(path, sizes=PNG_SIZES):
     """Rasterise one svg at each size, scaled so the longest side matches."""
     svg = path.read_text()
@@ -302,12 +317,11 @@ def png_set(path, sizes=PNG_SIZES):
     )
     for n in sizes:
         w, h = (n, round(n * vh / vw)) if vw >= vh else (round(n * vw / vh), n)
+        out = PNGS / f"{path.stem}-{n}.png"
         cairosvg.svg2png(
-            url=str(path),
-            write_to=str(PNGS / f"{path.stem}-{n}.png"),
-            output_width=w,
-            output_height=h,
+            url=str(path), write_to=str(out), output_width=w, output_height=h
         )
+        shrink(out)
     print(f"  logo/png/{path.stem}-*.png ({len(sizes)} sizes)")
 
 
@@ -329,6 +343,7 @@ def banner(svg, path, w, h):
     cairosvg.svg2png(
         url="/tmp/_png.svg", write_to=str(path), output_width=w, output_height=h
     )
+    shrink(path)
     print(f"  {path.relative_to(ROOT)} ({w}x{h})")
 
 
