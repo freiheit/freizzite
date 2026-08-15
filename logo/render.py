@@ -16,6 +16,7 @@ Geometry is read from the master by element id, so editing the master is
 enough -- no constants are duplicated here.
 """
 
+import colorsys
 import re
 from pathlib import Path
 
@@ -27,6 +28,13 @@ MASTER = ROOT / "logo" / "freizzite-logo.svg"
 ICONS = ROOT / "system_files/usr/share/icons/hicolor/scalable"
 COLS = 36  # width of the fastfetch logo, in terminal cells
 SS = 8  # supersample per half-cell; kills antialiasing without dithering
+HALO = 3  # white keyline, in user units either side
+GAIN, SAT = 0.22, 0.80  # KDE variant: lighter and less saturated for dark panels
+
+# the silhouette. #eye-* and #mouth are deliberately absent: a keyline on the
+# facial details reads as an outline drawing rather than a logo.
+ANTENNAE = ["antenna-left", "bulb-left", "antenna-right", "bulb-right"]
+OUTLINE = ["ear-left", "ear-right", "neck", "head", "body", *ANTENNAE]
 
 RED, EAR, BLK = (162, 16, 16), (28, 15, 15), (0, 0, 0)
 PALETTE = [RED, EAR, BLK]
@@ -80,6 +88,45 @@ def reframe(svg, axis, pad=0.05):
         svg,
         count=1,
     )
+
+
+def halo(svg, ids, h=HALO):
+    """White keyline behind the silhouette.
+
+    Every halo goes at the very back, so where two coloured shapes touch --
+    antenna to bulb, ear to head, neck to torso -- the front shapes cover the
+    white and the join stays solid. Widening the stroke rather than the shape
+    keeps each halo on its element's own outline.
+    """
+    backs = []
+    for eid in ids:
+        el = element(svg, eid)
+        w = float((re.search(r"stroke-width:\s*([\d.]+)", el) or [None, "1"])[1])
+        back = re.sub(r'\bid="[^"]+"', f'id="halo-{eid}"', el)
+        back = re.sub(r"stroke:\s*rgb\([^)]*\)", "stroke: rgb(255, 255, 255)", back)
+        back = re.sub(r"fill:\s*rgb\([^)]*\)", "fill: rgb(255, 255, 255)", back)
+        back = (
+            re.sub(r"stroke-width:\s*[\d.]+", f"stroke-width: {w + 2 * h:.3f}", back)
+            if "stroke-width" in back
+            else back.replace('style="', f'style="stroke-width: {w + 2 * h:.3f}; ')
+        )
+        backs.append(back)
+    return re.sub(r"(<svg[^>]*>\n)", r"\1  " + "\n  ".join(backs) + "\n", svg, count=1)
+
+
+def recolor(svg, gain=GAIN, sat=SAT):
+    """Lift the reds off a dark background: lighter, a little less saturated.
+    Near-blacks are left alone so the eyes and mouth keep their contrast."""
+
+    def shift(m):
+        r, g, b = (int(v) / 255 for v in m.group(1, 2, 3))
+        hue, lum, s = colorsys.rgb_to_hls(r, g, b)
+        if lum < 0.06:
+            return m.group(0)
+        r, g, b = colorsys.hls_to_rgb(hue, lum + (1 - lum) * gain, s * sat)
+        return f"fill: rgb({round(r * 255)}, {round(g * 255)}, {round(b * 255)})"
+
+    return re.sub(r"fill:\s*rgb\((\d+),\s*(\d+),\s*(\d+)\)", shift, svg)
 
 
 def short_antennae(svg, k=0.4178):
@@ -261,18 +308,20 @@ def main():
     head_el = element(master, "head")
     axis = attr(head_el, "x") + attr(head_el, "width") / 2
 
-    full = reframe(master, axis)
-    head = reframe(drop(master, "neck", "body"), axis)
+    plain = drop(master, "neck", "body")
+    head = reframe(halo(plain, ANTENNAE), axis)
+    full = reframe(halo(recolor(master), OUTLINE), axis)
+    short = reframe(halo(short_antennae(plain), ANTENNAE), axis)
 
     targets = {
         ICONS / "apps/freizzite-logo-icon.svg": head,
         ICONS / "distributor-logo.svg": full,
         # browsable copies of the derived shapes, not installed into the image
         ROOT / "logo/freizzite-logo-head.svg": head,
-        ROOT / "logo/freizzite-logo-head-short.svg": reframe(
-            short_antennae(drop(master, "neck", "body")), axis
+        ROOT / "logo/freizzite-logo-head-short.svg": short,
+        ROOT / "system_files/usr/share/ublue-os/freizzite/logo.txt": text_logo(
+            reframe(plain, axis)
         ),
-        ROOT / "system_files/usr/share/ublue-os/freizzite/logo.txt": text_logo(head),
     }
     for path, content in targets.items():
         if path.suffix == ".svg":
@@ -290,15 +339,7 @@ def main():
 
     png(head, ROOT / "logo/freizzite-logo-512.png", 512, 512)
     png(
-        drop(
-            master,
-            "neck",
-            "body",
-            "antenna-left",
-            "antenna-right",
-            "bulb-left",
-            "bulb-right",
-        ),
+        drop(plain, *ANTENNAE),
         ROOT / "logo/freizzite-logo-1280x640.png",
         1280,
         640,
