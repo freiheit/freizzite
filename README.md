@@ -1,6 +1,6 @@
 # freizzite
 
-![Freizzite](logo/freizzite-logo-head-128.png)
+![Freizzite](logo/png/freizzite-logo-head-128.png)
 
 [![Build container image](https://github.com/freiheit/freizzite/actions/workflows/build.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/build.yml)
 [![Build disk images](https://github.com/freiheit/freizzite/actions/workflows/build-disk.yml/badge.svg)](https://github.com/freiheit/freizzite/actions/workflows/build-disk.yml)

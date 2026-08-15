@@ -10,8 +10,8 @@ Outputs:
   logo/freizzite-logo-head.svg          browsable copies of each variant
   logo/freizzite-logo-head-short.svg
   logo/freizzite-logo-kde.svg
-  logo/<name>-{2048,1280,1024,512,256,128,64,32}.png   for every svg in logo/
-  logo/freizzite-logo-banner-1280x640.png              social preview
+  logo/png/<name>-{2048,1280,1024,512,256,128,64,32}.png  for every svg in logo/
+  logo/png/freizzite-logo-banner-1280x640.png            social preview
 
 Geometry is read from the master by element id, so editing the master is
 enough -- no constants are duplicated here.
@@ -26,6 +26,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 MASTER = ROOT / "logo" / "freizzite-logo.svg"
+PNGS = ROOT / "logo" / "png"
 ICONS = ROOT / "system_files/usr/share/icons/hicolor/scalable"
 COLS = 36  # width of the fastfetch logo, in terminal cells
 SS = 8  # supersample per half-cell; kills antialiasing without dithering
@@ -294,11 +295,11 @@ def png_set(path, sizes=PNG_SIZES):
         w, h = (n, round(n * vh / vw)) if vw >= vh else (round(n * vw / vh), n)
         cairosvg.svg2png(
             url=str(path),
-            write_to=str(path.with_name(f"{path.stem}-{n}.png")),
+            write_to=str(PNGS / f"{path.stem}-{n}.png"),
             output_width=w,
             output_height=h,
         )
-    print(f"  {path.stem}-*.png ({len(sizes)} sizes)")
+    print(f"  logo/png/{path.stem}-*.png ({len(sizes)} sizes)")
 
 
 def banner(svg, path, w, h):
@@ -357,9 +358,10 @@ def main():
         path.write_text(content)
         print(f"  {path.relative_to(ROOT)}")
 
+    PNGS.mkdir(exist_ok=True)
     banner(
         drop(plain, *ANTENNAE),
-        ROOT / "logo/freizzite-logo-banner-1280x640.png",
+        PNGS / "freizzite-logo-banner-1280x640.png",
         1280,
         640,
     )

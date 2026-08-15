@@ -14,8 +14,8 @@ just freizzite-logo
 - `freizzite-logo-head.svg` — head only, no torso
 - `freizzite-logo-head-short.svg` — head with the antennae pulled in
 - `freizzite-logo-kde.svg` — full robot, lightened, with a white keyline
-- `<name>-2048.png` … `<name>-32.png` — every svg above, longest side in pixels
-- `freizzite-logo-banner-1280x640.png` — cropped head, for a social preview
+- `png/<name>-2048.png` … `png/<name>-32.png` — every svg above, longest side in pixels
+- `png/freizzite-logo-banner-1280x640.png` — cropped head, for a social preview
 
 ## Generated elsewhere
 
