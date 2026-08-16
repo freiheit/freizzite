@@ -24,9 +24,12 @@ done
 terra_release="$(rpm -E %fedora)"
 # no pipe into grep -q: it exits on first match, and the resulting SIGPIPE
 # would trip pipefail even on success
-terra_metalink="$(curl -sfL \
+terra_metalink="$(curl -sL \
     "https://tetsudou.fyralabs.com/metalink?repo=terra${terra_release}&arch=$(uname -m)" || true)"
-if ! grep -q '<url' <<<"${terra_metalink}"; then
+# An empty reply means the probe itself failed (no curl, no network), which is
+# not evidence the repo is gone -- leave $releasever alone and let the package
+# verification report the truth rather than silently pinning the wrong release.
+if [ -n "${terra_metalink}" ] && ! grep -q '<url' <<<"${terra_metalink}"; then
     echo "NOTE: terra${terra_release} has no mirrors; falling back to terra$((terra_release - 1))"
     sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
 fi
