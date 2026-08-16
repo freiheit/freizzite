@@ -22,15 +22,24 @@ done
 # Pin to the previous release until the current one is published; the check
 # stops matching (and the pin disappears) as soon as it is.
 terra_release="$(rpm -E %fedora)"
-# no pipe into grep -q: it exits on first match, and the resulting SIGPIPE
-# would trip pipefail even on success
-terra_metalink="$(curl -sL \
-    "https://tetsudou.fyralabs.com/metalink?repo=terra${terra_release}&arch=$(uname -m)" || true)"
-# An empty reply means the probe itself failed (no curl, no network), which is
-# not evidence the repo is gone -- leave $releasever alone and let the package
-# verification report the truth rather than silently pinning the wrong release.
-if [ -n "${terra_metalink}" ] && ! grep -q '<url' <<<"${terra_metalink}"; then
-    echo "NOTE: terra${terra_release} has no mirrors; falling back to terra$((terra_release - 1))"
+terra_origin="https://repos.fyralabs.com"
+
+# Terra's metalink advertises a repomd checksum that its mirrors -- including
+# the fyralabs origin -- do not always have yet. dnf rejects every mirror
+# ("Usable URL not found"), the repo goes unusable, and --skip-unavailable then
+# drops every terra package without failing. Go straight to the origin: no
+# advertised hash, no mirror race. terra-release ships the baseurl commented
+# out next to each metalink.
+sed -i -e 's/^metalink=/#metalink=/' -e 's/^#baseurl=/baseurl=/' /etc/yum.repos.d/terra*.repo
+
+# Terra publishes one repo per Fedora release and can lag a Fedora bump; fall
+# back to the previous release while the current one does not exist. Only a
+# definite 404 counts -- a network failure reports 000 and is left alone, so a
+# blip cannot silently pin the wrong release.
+terra_status="$(curl -sSo /dev/null -w '%{http_code}' \
+    "${terra_origin}/terra${terra_release}/repodata/repomd.xml" || true)"
+if [ "${terra_status}" = "404" ]; then
+    echo "NOTE: terra${terra_release} is not published; falling back to terra$((terra_release - 1))"
     sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
 fi
 
