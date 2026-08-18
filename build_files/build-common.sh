@@ -14,7 +14,6 @@ COMMON_PACKAGES=(
     firacode-nerd-fonts
     firamono-nerd-fonts
     google-android-emoji-fonts
-    # google-noto-emoji-vf-fonts
     google-roboto-fonts
     htop
     joe

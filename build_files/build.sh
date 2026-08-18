@@ -16,14 +16,6 @@ for repo in /etc/yum.repos.d/terra*.repo; do
     fi
 done
 
-# Terra publishes one repo per Fedora release and lags the bump on the
-# :testing stream. terra$releasever then has no mirrors, dnf treats the repo as
-# unusable, and --skip-unavailable drops every terra package without failing.
-# Pin to the previous release until the current one is published; the check
-# stops matching (and the pin disappears) as soon as it is.
-terra_release="$(rpm -E %fedora)"
-terra_origin="https://repos.fyralabs.com"
-
 # Terra's metalink advertises a repomd checksum that its mirrors -- including
 # the fyralabs origin -- do not always have yet. dnf rejects every mirror
 # ("Usable URL not found"), the repo goes unusable, and --skip-unavailable then
@@ -36,8 +28,9 @@ sed -i -e 's/^metalink=/#metalink=/' -e 's/^#baseurl=/baseurl=/' /etc/yum.repos.
 # back to the previous release while the current one does not exist. Only a
 # definite 404 counts -- a network failure reports 000 and is left alone, so a
 # blip cannot silently pin the wrong release.
+terra_release="$(rpm -E %fedora)"
 terra_status="$(curl -sSo /dev/null -w '%{http_code}' \
-    "${terra_origin}/terra${terra_release}/repodata/repomd.xml" || true)"
+    "https://repos.fyralabs.com/terra${terra_release}/repodata/repomd.xml" || true)"
 if [ "${terra_status}" = "404" ]; then
     echo "NOTE: terra${terra_release} is not published; falling back to terra$((terra_release - 1))"
     sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
@@ -67,8 +60,7 @@ var_dirs >/tmp/var-dirs-before
 ################################
 case "${BUILD_VARIANT}" in
     bazzite-deck)
-        echo "Running deck-specific build..."
-        /ctx/build-deck.sh
+        echo "Deck variant: nothing extra for now"
         ;;
     *)
         echo "Running desktop-specific build..."
@@ -88,15 +80,10 @@ esac
 # GID is at best inert and at worst collides with a real user's group.
 # `docker` is flagged too but comes from the bazzite-dx base -- pinning a GID we
 # do not own would fight upstream if they ever change it.
-{
-    for grp in onepassword onepassword-cli onepassword-mcp; do
-        # `if` so a missing group is skipped: getent exits 2 and pipefail
-        # would otherwise abort the build
-        if getent group "$grp" >/dev/null; then
-            echo "g $grp -"
-        fi
-    done
-} >/usr/lib/sysusers.d/freizzite-1password.conf
+# `|| true` because getent exits 2 when it finds none of them, and pipefail
+# would otherwise abort the build.
+getent group onepassword onepassword-cli onepassword-mcp |
+    sed 's/^\([^:]*\):.*/g \1 -/' >/usr/lib/sysusers.d/freizzite-1password.conf || true
 [ -s /usr/lib/sysusers.d/freizzite-1password.conf ] ||
     rm -f /usr/lib/sysusers.d/freizzite-1password.conf
 
@@ -109,15 +96,16 @@ rm -rf /var/lib/dnf /var/lib/rpm-state /run/dnf
 # Everything else this build added under /var gets a tmpfiles.d entry (so it is
 # recreated on a fresh deploy) and is then removed from the image.
 var_dirs >/tmp/var-dirs-after
+comm -13 /tmp/var-dirs-before /tmp/var-dirs-after >/tmp/var-dirs-new
 {
     echo "# Generated at image build time by build_files/build.sh"
-    comm -13 /tmp/var-dirs-before /tmp/var-dirs-after | while read -r d; do
+    while read -r d; do
         printf 'd %s 0%s %s %s - -\n' \
             "$d" "$(stat -c '%a' "$d")" "$(stat -c '%U' "$d")" "$(stat -c '%G' "$d")"
-    done
+    done </tmp/var-dirs-new
 } >/usr/lib/tmpfiles.d/freizzite-var.conf
 
-comm -13 /tmp/var-dirs-before /tmp/var-dirs-after | tac | while read -r d; do
+tac /tmp/var-dirs-new | while read -r d; do
     rm -rf "$d"
 done
 
