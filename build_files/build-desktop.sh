@@ -14,12 +14,21 @@ dnf5 -y copr enable scottames/ghostty
 dnf5 config-manager setopt 'copr:copr.fedorainfracloud.org:scottames:ghostty.priority=50'
 
 # https://code.visualstudio.com/docs/setup/linux#_rhel-fedora-and-centos-based-distributions
-rpm --import https://packages.microsoft.com/keys/microsoft.asc &&
-echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+dnf5 config-manager addrepo --id=code \
+  --set=name="Visual Studio Code" \
+  --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
+  --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc \
+  --set=gpgcheck=1 --set=autorefresh=1 --set=type=rpm-md
 
 # https://support.1password.com/install-linux/#fedora-or-red-hat-enterprise-linux
 rpm --import https://downloads.1password.com/linux/keys/1password.asc
-echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=\"https://downloads.1password.com/linux/keys/1password.asc\"" > /etc/yum.repos.d/1password.repo
+# shellcheck disable=SC2016 # $basearch is dnf's variable, not the shell's
+dnf5 config-manager addrepo --id=1password \
+  --set=name="1Password Stable Channel" \
+  --set=baseurl='https://downloads.1password.com/linux/rpm/stable/$basearch' \
+  --set=gpgkey=https://downloads.1password.com/linux/keys/1password.asc \
+  --set=gpgcheck=1 --set=repo_gpgcheck=1
 
 # https://support.mozilla.org/en-US/kb/install-firefox-linux#w_install-firefox-rpm-package-recommended
 dnf5 config-manager addrepo --id=mozilla \
@@ -28,14 +37,11 @@ dnf5 config-manager addrepo --id=mozilla \
   --set=gpgcheck=1 --set=repo_gpgcheck=0 --set=priority=10
 
 # https://code.claude.com/docs/en/setup#dnf
-tee /etc/yum.repos.d/claude-code.repo <<'EOF'
-[claude-code]
-name=Claude Code
-baseurl=https://downloads.claude.ai/claude-code/rpm/stable
-enabled=1
-gpgcheck=1
-gpgkey=https://downloads.claude.ai/keys/claude-code.asc
-EOF
+dnf5 config-manager addrepo --id=claude-code \
+  --set=name="Claude Code" \
+  --set=baseurl=https://downloads.claude.ai/claude-code/rpm/stable \
+  --set=gpgkey=https://downloads.claude.ai/keys/claude-code.asc \
+  --set=gpgcheck=1
 
 DESKTOP_PACKAGES=(
     # I'd prefer non-flatpak browser so I can do 1password desktop integration easier
@@ -66,7 +72,6 @@ DESKTOP_TERRA_PACKAGES=(
     git-filter-repo
     git-koji # terra
     git-lfs
-#    git-subtree
     jq
     nodejs
     nodejs-npm
@@ -86,19 +91,6 @@ DESKTOP_TERRA_PACKAGES=(
     uv
     yamllint
     yq
-
-    # DevOps/Sysadmin tools
-#    podman-machine
-#    podman-tui
-#    qemu
-#    libvirt
-#    qemu-kvm
-#    virt-manager
-#    edk2-ovmf
-#    guestfs-tools
-
-    # Try zed out (terra)
-#    zed
 
     # Handy tools
     fzf
@@ -121,10 +113,6 @@ DESKTOP_TERRA_PACKAGES=(
     bzip3-tools
     gzip
     ncompress
-#    7zip
-#    unzip
-#    xz
-#    zip
 
     # Website thingy
     hugo
