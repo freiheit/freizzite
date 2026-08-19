@@ -1,8 +1,12 @@
 set dotenv-filename := "image-template.env"
 set dotenv-load
 
+# Freizzite: fork-only recipes live here, to keep this file mergeable
+import 'freizzite.just'
+
 export image_name := env_var("IMAGE_NAME")
 export repo_organization := env_var("REPO_ORGANIZATION")
+export repo_name := env_var("REPO_NAME")
 export image_desc := env_var("IMAGE_DESC")
 export image_keywords := env_var("IMAGE_KEYWORDS")
 export image_logo_url := env_var("IMAGE_LOGO_URL")
@@ -99,13 +103,19 @@ build $target_image=image_name $tag=default_tag:
     set -euox pipefail
 
     BUILD_ARGS=()
+    # Freizzite: parameterize the base image so one repo builds multiple
+    # variants. Defaults come from image-template.env (dotenv-loaded); CI
+    # overrides them per matrix entry via the environment.
+    BUILD_ARGS+=("--build-arg" "BASE_IMAGE=${BASE_IMAGE:-bazzite-dx-nvidia}")
+    BUILD_ARGS+=("--build-arg" "BASE_TAG=${BASE_TAG:-stable}")
+    BUILD_ARGS+=("--build-arg" "BUILD_VARIANT=${BUILD_VARIANT:-${BASE_IMAGE:-bazzite-dx-nvidia}}")
     LABELS=()
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)
-        LABELS+=("--label" "io.artifacthub.package.readme-url=https://raw.githubusercontent.com/{{ repo_organization }}/{{ image_name }}/${GIT_SHA}/README.md")
-        LABELS+=("--label" "org.opencontainers.image.documentation=https://raw.githubusercontent.com/{{ repo_organization }}/{{ image_name }}/${GIT_SHA}/README.md")
-        LABELS+=("--label" "org.opencontainers.image.source=https://github.com/{{ repo_organization }}/{{ image_name }}/blob/${GIT_SHA}/Containerfile")
-        LABELS+=("--label" "org.opencontainers.image.url=https://github.com/{{ repo_organization }}/{{ image_name }}/tree/${GIT_SHA}")
+        LABELS+=("--label" "io.artifacthub.package.readme-url=https://raw.githubusercontent.com/{{ repo_organization }}/{{ repo_name }}/${GIT_SHA}/README.md")
+        LABELS+=("--label" "org.opencontainers.image.documentation=https://raw.githubusercontent.com/{{ repo_organization }}/{{ repo_name }}/${GIT_SHA}/README.md")
+        LABELS+=("--label" "org.opencontainers.image.source=https://github.com/{{ repo_organization }}/{{ repo_name }}/blob/${GIT_SHA}/Containerfile")
+        LABELS+=("--label" "org.opencontainers.image.url=https://github.com/{{ repo_organization }}/{{ repo_name }}/tree/${GIT_SHA}")
         LABELS+=("--label" "org.opencontainers.image.version={{ default_tag }}.$(date +%Y%m%d)-${GIT_SHA}")
     fi
 
@@ -120,6 +130,22 @@ build $target_image=image_name $tag=default_tag:
     LABELS+=("--label" "org.opencontainers.image.description={{ image_desc }}")
     LABELS+=("--label" "org.opencontainers.image.title={{ image_name }}")
     LABELS+=("--label" "org.opencontainers.image.vendor={{ repo_organization }}")
+
+    # Freizzite: record which upstream base produced this image, so the matrix
+    # job's gate can tell from the published image alone whether upstream has
+    # moved. BASE_TAG is "stable"/"testing" locally and "<stream>@sha256:..."
+    # in CI; strip any digest so the ref label stays the floating ref we watch.
+    BASE_STREAM="${BASE_TAG:-stable}"
+    BASE_STREAM="${BASE_STREAM%%@*}"
+    LABELS+=("--label" "io.github.freiheit.build.base-ref=ghcr.io/ublue-os/${BASE_IMAGE:-bazzite-dx-nvidia}:${BASE_STREAM}")
+    if [[ -n "${BUILD_BASE_DIGEST:-}" ]]; then
+        LABELS+=("--label" "io.github.freiheit.build.base-digest=${BUILD_BASE_DIGEST}")
+    fi
+    # Mirrors the clean-tree guard above: a dirty tree records no commit, the
+    # gate then fails open, and you get one extra build rather than a wrong one.
+    if [[ -z "$(git status -s)" ]]; then
+        LABELS+=("--label" "io.github.freiheit.build.source-commit=$(git rev-parse HEAD)")
+    fi
 
     # This actually builds the image!
     PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
@@ -185,6 +211,58 @@ ostree-rechunk $target_image=image_name $tag=default_tag:
       --bootc \
       --rootfs /rpm-ostree \
       --output "containers-storage:[overlay@/run/host-container-storage+/run/rpm-ostree-storage]localhost/${target_image}:${tag}"
+
+# Freizzite: like ostree-rechunk, but seeds the previously published chunked
+# image so unchanged content keeps identical layer digests across builds,
+# shrinking bootc upgrade downloads. build-chunked-oci reuses the chunk
+# layout of whatever chunked image it finds at the output ref. Falls back to
+# a plain rechunk when no previous image can be pulled (first build of a
+# variant, registry hiccup).
+
+# Rechunk seeded with the previously published image (smaller update deltas)
+ostree-rechunk-seeded $target_image=image_name $tag=default_tag:
+    #!/usr/bin/env bash
+
+    set -xeuo pipefail
+
+    # TODO: This is the only blocker for rootless CI
+    # https://github.com/coreos/rpm-ostree/issues/5346
+    if [[ ! "${UID}" -eq "0" ]]; then
+      echo "This needs to run as root."
+      exit 1
+    fi
+
+    FROM_REF="localhost/${target_image}:${tag}"
+    PREV="ghcr.io/{{ repo_organization }}/${target_image}:${tag}"
+    if podman pull "${PREV}"; then
+      # Park the fresh unchunked build under a scratch tag and place the
+      # previous chunked image at the output ref for the chunker to reuse.
+      FROM_REF="localhost/${target_image}:${tag}-unchunked"
+      podman tag "localhost/${target_image}:${tag}" "${FROM_REF}"
+      podman tag "${PREV}" "localhost/${target_image}:${tag}"
+      podman rmi "${PREV}" || true
+    fi
+
+    # You can use your own base image here to avoid pulling fedora-bootc
+    RPM_OSTREE_CHUNKER_IMAGE="quay.io/fedora/fedora-bootc:latest"
+
+    podman run --rm \
+      --pull=newer \
+      --privileged \
+      -v "/var/lib/containers:/var/lib/containers" \
+      --entrypoint /usr/bin/rpm-ostree \
+      "${RPM_OSTREE_CHUNKER_IMAGE}" \
+      compose build-chunked-oci \
+      --max-layers 127 \
+      --format-version=2 \
+      --bootc \
+      --from "${FROM_REF}" \
+      --output containers-storage:"localhost/${target_image}:${tag}"
+
+    # Drop the parked unchunked build (frees runner disk)
+    if [[ "${FROM_REF}" == *"-unchunked" ]]; then
+      podman rmi "${FROM_REF}" || true
+    fi
 
 # Generate Default Tag
 [group('Utility')]

@@ -4,26 +4,235 @@ on:
   pull_request:
     branches:
       - main
+  # Freizzite: build after pre-commit passes on main instead of on raw push
+  workflow_run:
+    workflows: ["pre-commit"]
+    types: [completed]
+    branches: [main]
   schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**/README.md'
+    # Cheap upstream poll (~40s), hourly through the working day. The `matrix`
+    # job resolves each variant's upstream base digest and drops the targets
+    # that have not moved, so a full build only runs when something changed.
+    # Minute :17 is deliberate -- scheduled runs at :00 queue worst.
+    - cron: "17 11-20 * * *" # hourly, 11am-8pm US/Pacific
+      timezone: "America/Los_Angeles"
+    # Unconditional rebuild of every target, bypassing the gate entirely. It
+    # picks up floating build-time deps the gate cannot see (terra, COPRs, the
+    # Mozilla/1Password/Microsoft repos, ~120 dnf packages), and guarantees a
+    # build even if the gate itself breaks in the "always skip" direction.
+    # Must stay byte-identical to FORCE_CRON in the matrix job.
+    - cron: "40 5 * * 1"
   workflow_dispatch:
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  # Only PR pushes should cancel. Scheduled polls share this group with
+  # main-branch builds, and builds run 35min-3.5h: cancelling them means the
+  # build never publishes, so the gate keeps seeing the stale label and
+  # rebuilds -- a livelock that burns runner time and ships nothing.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Freizzite: compute the build matrix. A `testing` stream is added for a
+  # variant only when its upstream base publishes a :testing tag. On top of
+  # that, each variant/stream target is gated on whether its upstream base has
+  # actually moved since we last published -- see .github/scripts/upstream-gate.sh.
+  # Targets with nothing to do are dropped, so a quiet poll builds nothing.
+  matrix:
+    name: Determine build matrix
+    runs-on: ubuntu-latest
+    # Mirror build_push: on a workflow_run trigger, only proceed if pre-commit
+    # succeeded. build_push depends on this job, so gating here gates both.
+    if: >
+      github.event_name != 'workflow_run' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      targets: ${{ steps.gen.outputs.targets }}
+      any: ${{ steps.gen.outputs.any }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Compute variant/stream targets
+        id: gen
+        env:
+          # "<freizzite-image>|<upstream-base>|<description>", one active variant
+          # per line. The description becomes IMAGE_DESC for that variant (env
+          # beats dotenv in the Justfile, so no image-template.env change).
+          VARIANTS: |
+            freizzite-dx-nvidia|bazzite-dx-nvidia|Freizzite - customized Bazzite (dx-nvidia: developer tools + NVIDIA drivers)
+            freizzite-deck|bazzite-deck|Freizzite - customized Bazzite (deck: Steam Deck / handheld)
+            # freizzite|bazzite|Freizzite - customized Bazzite
+            # freizzite-nvidia|bazzite-nvidia|Freizzite - customized Bazzite (NVIDIA drivers)
+            # freizzite-nvidia-open|bazzite-nvidia-open|Freizzite - customized Bazzite (open NVIDIA drivers)
+          LABEL_NS: "io.github.freiheit.build"
+          # Vendor repos that move independently of the base image. One
+          # "<package> <repo-id> <baseurl>" per line; dnf expands $releasever
+          # inside the query container. Anything installed from the base image
+          # or from a COPR is already covered by the base-digest check.
+          TRACKED: |
+            firefox     mozilla https://packages.mozilla.org/rpm/firefox
+            claude-code claude  https://downloads.claude.ai/claude-code/rpm/stable
+            code        vscode  https://packages.microsoft.com/yumrepos/vscode
+            vesktop     terra   https://repos.fyralabs.com/terra$releasever
+          # Rebuild at least every 3 days even if the base has not moved, so
+          # floating package repos (Firefox, 1Password, vscode, terra, COPRs)
+          # do not go stale.
+          MAX_AGE_HOURS: "72"
+          MIN_INTERVAL_HOURS_STABLE: "0"
+          # bazzite's :testing moves 1-5x/day. Without a floor, gating that
+          # stream would build *more* often than the fixed schedule it
+          # replaces; 4h caps it at 6 builds/day.
+          MIN_INTERVAL_HOURS_TESTING: "4"
+          # Must match the weekly `schedule` cron above exactly.
+          FORCE_CRON: "40 5 * * 1"
+          REG_USER: ${{ github.actor }}
+          REG_PASS: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          HEAD_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+
+          # A code change, a manual dispatch or a PR must always build every
+          # target; so must the weekly safety-net cron, which bypasses the gate.
+          FORCE=false
+          FORCE_REASON=""
+          case "${EVENT_NAME}" in
+            workflow_dispatch | pull_request | workflow_run)
+              FORCE=true
+              FORCE_REASON="triggered by ${EVENT_NAME}"
+              ;;
+          esac
+          if [ "${EVENT_NAME}" = "schedule" ] && [ "${EVENT_SCHEDULE}" = "${FORCE_CRON}" ]; then
+            FORCE=true
+            FORCE_REASON="weekly safety-net cron (${FORCE_CRON})"
+          fi
+          export FORCE FORCE_REASON HEAD_SHA LABEL_NS REG_USER REG_PASS MAX_AGE_HOURS
+
+          # Once per poll, not per target: the terra query alone pulls ~850KB.
+          read -r PKGS_NEWEST_EPOCH PKGS_NEWEST_NAME < <(
+            .github/scripts/tracked-packages.sh) || true
+          export PKGS_NEWEST_EPOCH PKGS_NEWEST_NAME
+          echo "tracked packages: newest is ${PKGS_NEWEST_NAME:-none}" \
+               "${PKGS_NEWEST_EPOCH:+($(date -u -d "@${PKGS_NEWEST_EPOCH}" \
+               +%Y-%m-%dT%H:%M:%SZ))}"
+
+          targets=()
+          while IFS='|' read -r name base desc; do
+            name="${name//[[:space:]]/}"
+            [[ -z "${name}" || "${name}" == \#* ]] && continue
+            base="${base//[[:space:]]/}"
+            # trim leading/trailing whitespace from the description
+            desc="${desc#"${desc%%[![:space:]]*}"}"
+            desc="${desc%"${desc##*[![:space:]]}"}"
+
+            for stream in stable testing; do
+              if [ "${stream}" = "testing" ]; then
+                default_tag=testing
+                min_interval="${MIN_INTERVAL_HOURS_TESTING}"
+              else
+                default_tag=latest
+                min_interval="${MIN_INTERVAL_HOURS_STABLE}"
+              fi
+
+              # The gate doubles as the upstream :testing existence probe it
+              # replaces: an unresolvable-because-404 base means the stream does
+              # not exist for this variant. It distinguishes that from a
+              # transient registry fault, which the old `imagetools inspect
+              # >/dev/null 2>&1` could not.
+              result="$(BASE_REF="ghcr.io/ublue-os/${base}:${stream}" \
+                        PUBLISHED_REF="ghcr.io/${OWNER}/${name}:${default_tag}" \
+                        MIN_INTERVAL_HOURS="${min_interval}" \
+                        .github/scripts/upstream-gate.sh)"
+
+              build="$(jq -r '.build' <<<"${result}")"
+              reason="$(jq -r '.reason' <<<"${result}")"
+              digest="$(jq -r '.base_digest' <<<"${result}")"
+              absent="$(jq -r '.stream_absent' <<<"${result}")"
+
+              if [ "${absent}" = "true" ]; then
+                echo "- \`${name}\` (${stream}): stream does not exist upstream" >> "${GITHUB_STEP_SUMMARY}"
+                continue
+              fi
+              if [ "${build}" != "true" ]; then
+                echo "- \`${name}\` (${stream}): **skip** - ${reason}" >> "${GITHUB_STEP_SUMMARY}"
+                continue
+              fi
+
+              echo "- \`${name}\` (${stream}): **build** - ${reason}" >> "${GITHUB_STEP_SUMMARY}"
+              targets+=("$(jq -cn \
+                --arg name "${name}" --arg base "${base}" --arg stream "${stream}" \
+                --arg digest "${digest}" --arg default_tag "${default_tag}" --arg desc "${desc}" \
+                '{name: $name, base: $base, base_tag: $stream, base_digest: $digest,
+                  default_tag: $default_tag, stream: $stream, image_desc: $desc}')")
+            done
+          done <<< "${VARIANTS}"
+
+          if [ "${#targets[@]}" -eq 0 ]; then
+            echo "targets=[]" >> "${GITHUB_OUTPUT}"
+            echo "any=false" >> "${GITHUB_OUTPUT}"
+            echo "" >> "${GITHUB_STEP_SUMMARY}"
+            echo "**Nothing to build.**" >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          printf -v joined '%s,' "${targets[@]}"
+          echo "targets=[${joined%,}]" >> "${GITHUB_OUTPUT}"
+          echo "any=true" >> "${GITHUB_OUTPUT}"
+
   build_push:
-    name: Build and push image
-    runs-on: ubuntu-24.04
+    name: ${{ matrix.target.name }} (${{ matrix.target.stream }})
+    needs: matrix
+    # A matrix expression evaluating to [] is a hard error ("Matrix vector
+    # 'target' does not contain any values"), which would paint a red X on
+    # every quiet poll. Guarding on `any` makes the nothing-to-do case a clean
+    # grey "Skipped" instead.
+    if: needs.matrix.outputs.any == 'true'
+    # Freizzite: 26.04 (public preview) rather than 24.04, because trivial RUN
+    # layers were taking ~30min each on 24.04 and aurora builds the same class
+    # of image on 26.04 without that. Revert if the preview misbehaves.
+    # Renovate's github-runners manager tracks this, so it moves on its own
+    # once a newer stable runner exists.
+    runs-on: ubuntu-26.04
+
+    # Per-step timeouts below are 2x the longest observed successful run of
+    # that step, excluding known-degraded runs (Build Image has succeeded at
+    # 97-138m when the runner or network degrades; the healthy cluster tops
+    # out at 28m23s), rounded up to 10m. This job cap is deliberately lower
+    # than their sum -- it is an outer backstop, not a per-step budget.
+    timeout-minutes: 120
+
+    # Freizzite: targets come from the `matrix` job above. IMAGE_NAME/BASE_IMAGE/
+    # BUILD_VARIANT/BASE_TAG/DEFAULT_TAG/IMAGE_DESC override the image-template.env
+    # defaults (env beats dotenv in the Justfile recipes). STREAM selects
+    # stable/testing.
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.matrix.outputs.targets) }}
+    env:
+      IMAGE_NAME: ${{ matrix.target.name }}
+      BASE_IMAGE: ${{ matrix.target.base }}
+      BUILD_VARIANT: ${{ matrix.target.base }}
+      BASE_TAG: ${{ matrix.target.base_tag }}
+      DEFAULT_TAG: ${{ matrix.target.default_tag }}
+      STREAM: ${{ matrix.target.stream }}
+      IMAGE_DESC: ${{ matrix.target.image_desc }}
+      # Digest the gate resolved for this target. The build pins the base to
+      # exactly this, so the label we record cannot drift from what was built.
+      BASE_DIGEST: ${{ matrix.target.base_digest }}
+      # Freizzite: podman runs under `sudo -E`, so its credentials must not
+      # depend on whether sudo preserves HOME. Pin the authfile for every
+      # podman call, root or not.
+      REGISTRY_AUTH_FILE: /tmp/podman-auth.json
 
     permissions:
       contents: read
@@ -35,8 +244,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # Freizzite: without a real storage backend podman falls back to the vfs
+      # driver, which copies the entire ~50GB image for every layer -- two
+      # one-line RUNs took ~30min each and hit the Build Image timeout. Both
+      # bazzite-dx and aurora use this action for the same reason.
+      #
+      # Currently a no-op here: the action skips itself unless /mnt is a
+      # mountpoint, and ubuntu-24.04 runners have no /mnt even as the first
+      # step after checkout (aurora, where this works, runs ubuntu-26.04).
+      # Kept ahead of the space-clearing step and left in place so it starts
+      # working if the runner image regains a temp disk. Non-fatal either way.
+      - name: Mount BTRFS for podman storage
+        uses: ublue-os/container-storage-action@25e05be4948f77746938687877829d15c5038036
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          mount-opts: compress-force=zstd:2
+          loopback-free: '1'
+
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        timeout-minutes: 10
 
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 #v4.0.0
@@ -69,16 +297,61 @@ jobs:
       # This actually builds the container image
       - name: Build Image
         id: build-image
+        timeout-minutes: 60
         run: |
-          just build \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          set -euo pipefail
+
+          # Pin the base to the digest the gate resolved. Without this,
+          # `podman build --pull=newer` re-resolves the floating stream tag at
+          # build time and could bake in a different digest than the one we are
+          # about to record, leaving the gate comparing against the wrong value.
+          # BUILD_BASE_DIGEST is what the Justfile writes as a label.
+          if [ -n "${BASE_DIGEST}" ]; then
+            export BASE_TAG="${STREAM}@${BASE_DIGEST}"
+            export BUILD_BASE_DIGEST="${BASE_DIGEST}"
+          else
+            export BASE_TAG="${STREAM}"
+            export BUILD_BASE_DIGEST=""
+            echo "::warning::upstream digest unresolved; building against the floating :${STREAM} tag"
+          fi
+
+          # `sudo -E` is ignored on these runners ("preserving the entire
+          # environment is not supported"), which silently dropped every matrix
+          # override -- just then fell back to image-template.env and built
+          # freizzite-deck from the dx-nvidia base. Pass the values through
+          # `env` so they do not depend on sudo's environment policy.
+          sudo env \
+            IMAGE_NAME="${IMAGE_NAME}" \
+            BASE_IMAGE="${BASE_IMAGE}" \
+            BASE_TAG="${BASE_TAG}" \
+            BUILD_VARIANT="${BUILD_VARIANT}" \
+            BUILD_BASE_DIGEST="${BUILD_BASE_DIGEST}" \
+            IMAGE_DESC="${IMAGE_DESC}" \
+            DEFAULT_TAG="${DEFAULT_TAG}" \
+            REGISTRY_AUTH_FILE="${REGISTRY_AUTH_FILE}" \
+            "$(command -v just)" build "${IMAGE_NAME}" "${DEFAULT_TAG}"
+
+          # The failure above was silent: dotenv supplies a default for every
+          # name CI overrides, so a dropped variable builds the wrong image
+          # under the right tag. Assert what actually got built.
+          want="ghcr.io/ublue-os/${BASE_IMAGE}:${STREAM}"
+          got=$(sudo podman image inspect "${IMAGE_NAME}:${DEFAULT_TAG}" \
+            | jq -r '.[0].Config.Labels["io.github.freiheit.build.base-ref"]
+                     // .[0].Labels["io.github.freiheit.build.base-ref"] // ""')
+          if [ "${got}" != "${want}" ]; then
+            echo "::error::built from ${got}, expected ${want}"
+            exit 1
+          fi
+          echo "verified: ${IMAGE_NAME}:${DEFAULT_TAG} built from ${got}"
 
       # This is optional, this provides smaller delta updates
+      # Freizzite: seeded variant reuses the previous published image's chunk
+      # layout so unchanged content keeps identical layer digests
       - name: Rechunk with rpm-ostree
         id: rechunk
+        timeout-minutes: 70
         run: |
-          just ostree-rechunk \
+          sudo -E $(command -v just) ostree-rechunk-seeded \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
@@ -99,6 +372,18 @@ jobs:
                         ${IMAGE_NAME} \
                         ${DEFAULT_TAG})"
 
+          # Freizzite: the testing stream must not publish the stream-agnostic
+          # tags (bare YYYYMMDD / YYYYMMDD-<sha>) that generate-build-tags emits,
+          # or they would collide with the stable stream on the same commit.
+          # Keep only testing-prefixed tags for that stream.
+          if [[ "${STREAM:-stable}" == "testing" ]]; then
+            filtered=()
+            for t in ${alias_tags}; do
+              [[ "${t}" == testing* ]] && filtered+=("${t}")
+            done
+            alias_tags="${filtered[*]}"
+          fi
+
           echo "Tags for this Action..."
           echo "${alias_tags}"
           echo "alias_tags=${alias_tags}" >> $GITHUB_OUTPUT
@@ -108,7 +393,7 @@ jobs:
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
-          just tag-images \
+          sudo -E $(command -v just) tag-images \
             "${IMAGE_NAME}" \
             "${DEFAULT_TAG}" \
             "${ALIAS_TAGS}"
@@ -123,15 +408,43 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Freizzite: docker/login-action only writes credentials for the runner
+      # user, but every podman call here is `sudo -E podman`, i.e. root. That
+      # worked only while sudo preserved HOME; when it stopped, root podman
+      # fell back to anonymous. Public blobs still read, so it surfaced late as
+      # "Requesting bearer token: 403 Forbidden" on the first write. Log podman
+      # in on its own -- bazzite-dx and aurora both do this alongside docker,
+      # which cosign and oras still need.
+      - name: Login podman to GitHub Container Registry
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          echo "${REGISTRY_TOKEN}" \
+            | sudo -E podman login ghcr.io -u "${REGISTRY_USER}" --password-stdin
+
       - name: Push To GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push-image
+        timeout-minutes: 20
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
           set -euox pipefail
+          # Freizzite: retry transient GHCR errors (e.g. 504 mid-push) instead
+          # of failing the whole build
           for tag in ${ALIAS_TAGS}; do
-            podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}
+            for attempt in 1 2 3; do
+              if sudo -E podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}; then
+                break
+              elif [[ "${attempt}" -lt 3 ]]; then
+                echo "Push of ${tag} failed (attempt ${attempt}); retrying in 30s..." >&2
+                sleep 30
+              else
+                exit 1
+              fi
+            done
           done
 
           digest=$(< /tmp/digestfile)
@@ -162,3 +475,27 @@ jobs:
           # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
 
+      # Freizzite: publish the per-variant Artifact Hub repository-metadata file
+      # to the `artifacthub.io` OCI tag so package ownership is claimed
+      # automatically (no manual control-panel verification step). One metadata
+      # file per package lives at artifacthub/<image-name>.yml; variants without
+      # one (e.g. before their ArtifactHub repo/ID exists) are skipped. oras
+      # reuses the ghcr credentials from the docker login step above. Runs only
+      # on the stable stream — the metadata is per package, not per tag.
+      - name: Install ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && matrix.target.stream == 'stable'
+
+      - name: Publish Artifact Hub repository metadata
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && matrix.target.stream == 'stable'
+        run: |
+          set -euo pipefail
+          meta="artifacthub/${IMAGE_NAME}.yml"
+          if [[ ! -f "${meta}" ]]; then
+            echo "No Artifact Hub metadata for ${IMAGE_NAME} (${meta}); skipping."
+            exit 0
+          fi
+          oras push \
+            "${IMAGE_REGISTRY}/${IMAGE_NAME}:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            "${meta}:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml"

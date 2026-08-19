@@ -1,15 +1,23 @@
+# Base image is parameterized so one repo can build multiple variants
+# (see the matrix in .github/workflows/build.yml and image-template.env)
+ARG BASE_IMAGE=bazzite-dx-nvidia
+ARG BASE_TAG=stable@sha256:6f93af1f493ce3b122902acfbdd8b7e41fa5ffab763aa43b7a28c2db2e38a789
+ARG BUILD_VARIANT=bazzite-dx-nvidia
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite:stable@sha256:fbd9a04cf9fa5166b4b4fffa1efbd87433c8bc94027182a338f0b7c0b8acde82
+FROM ghcr.io/ublue-os/${BASE_IMAGE}:${BASE_TAG}
+ARG BUILD_VARIANT
+ENV BUILD_VARIANT=${BUILD_VARIANT}
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable
 # FROM ghcr.io/ublue-os/bluefin-nvidia-open:stable
-# 
+#
 # ... and so on, here are more base images
 # Universal Blue Images: https://github.com/orgs/ublue-os/packages
 # Fedora base image: quay.io/fedora/fedora-bootc:44
@@ -24,7 +32,12 @@ FROM ghcr.io/ublue-os/bazzite:stable@sha256:fbd9a04cf9fa5166b4b4fffa1efbd87433c8
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
-# RUN rm /opt && mkdir /opt
+# Freizzite: one RUN, not two. Every layer commit copies the whole image when
+# podman falls back to the vfs storage driver, and these two took ~30 minutes
+# each on a runner without a proper storage backend.
+RUN rm /opt && mkdir /opt \
+    && rm -rf /usr/local \
+    && mkdir -p /usr/local /usr/local/bin /usr/local/etc /usr/local/games /usr/local/include /usr/local/lib /usr/local/man /usr/local/sbin /usr/local/share /usr/local/src
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script

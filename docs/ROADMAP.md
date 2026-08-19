@@ -1,0 +1,132 @@
+# freizzite roadmap
+
+Working list of fork-specific ideas and follow-ups. Fork-only file (upstream
+image-template has none). Keep entries short; move deep detail into PRs.
+
+Legend: **[ ]** todo · **[~]** in progress · **[x]** done · **(?)** needs a decision
+
+Convention: active work is ordered top→bottom (top = next). Items that are
+finished but not yet validated sit under "Pending validation." Once validated,
+move them to "Done" at the very bottom.
+
+---
+
+## Active work (top = next)
+
+### testing-tag builds [~] — implemented (all variants), pending validation
+
+Decision: **all variants**. Implementation details under Pending validation.
+
+### Per-variant `IMAGE_DESC` [x] — DONE
+
+From PR #41 (TODO in `image-template.env`): mention dx-nvidia / deck in each
+image's description. Done via a `image_desc` field in the `build.yml` matrix
+targets, exported as `IMAGE_DESC` in the `build_push` env (env beats dotenv —
+no Justfile change). Local builds still use the `image-template.env` default.
+
+### Upstream survey — remaining candidates (reference)
+
+From scanning `ublue-os/main` + `ublue-os/bazzite` (workflows/Justfiles only):
+
+- **just syntax check:** bazzite `just-syntax-check.yml` (`ublue-os/just-action`)
+  on PRs. Likely redundant — `build.yml` already runs `just check` on PRs.
+- **Handy Justfile recipes (optional):** `list-images`, `clean-images`,
+  `clean-isos` (bazzite); `verify-container` (main). Small local-dev niceties;
+  each is divergence — adopt only on clear need.
+- **Emergency retag (low value):** bazzite `retag.yml` (manual, "never
+  automate"). Only if a bad publish needs rolling back by tag.
+
+### ISO hosting → B2 + Fastly [ ] (bottom)
+
+GitHub Releases can't host the ISOs: **2 GiB/file** cap vs 7–10 GB ISOs.
+**Decision:** Backblaze B2 (already have) + **Fastly**. B2's Bandwidth Alliance
+gives free egress to Fastly, so only cheap B2 storage remains — and Fastly is
+Eric's wheelhouse. Possible bonus: Fastly Fast Forward (free CDN for OSS) —
+verify eligibility. **Next:** design upload + Fastly service (origin = B2
+bucket, cache, TLS, custom domain). Ties into releases below.
+
+### Releases + ISO automation [ ] (bottom)
+
+Rebuild release automation (old `generate_release.yml` + `changelog.py` were
+deleted as broken). Target flow: build ISOs → upload to B2 → publish a GitHub
+Release with notes pointing at hosted ISO URLs.
+**Trigger (?):** manual to start, and/or auto after a successful container build
+that followed an upstream bazzite release.
+**Changelog approach (?):** `release-please` (Conventional-Commits driven, fits
+Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
+— richer image-level notes, heavier).
+
+## Deferred
+
+- **CodeQL Python scan:** leave configured as-is and keep the (currently
+  failing) badge for now. It errors because the config includes Python but the
+  repo has none. If it can be set to treat missing Python as a silent skip
+  rather than an error, do that; otherwise remove the Python scan **last**,
+  after the other roadmap items (some may add Python).
+
+## Pending validation (watch; act only if they fail)
+
+- **Slow build layers / `ubuntu-26.04`:** on 24.04 runners, two one-line
+  `RUN`s (`/opt`, `/usr/local`) took ~30min _each_ and hit the Build Image
+  timeout — before `build.sh` ever ran; the same runs corrupted the rpmdb
+  during rechunk (`database disk image is malformed`). Fixed by moving
+  `build_push` to `ubuntu-26.04` (public preview), which is what aurora uses.
+  On 26.04 a measurement step reported `driver=overlay` with 121G free and
+  that `RUN` dropped to ~2min, so the storage driver was never the problem —
+  the 24.04 runs had almost certainly landed on the 72G runner pool, where a
+  50GB+ image leaves ~20–47G and thrashes. Both symptoms fit disk pressure.
+  The two `RUN`s were also merged into one layer; worth keeping, but that was
+  not the cure. `container-storage-action` stays as insurance and is inert
+  here: it only mounts a spare drive when `/mnt` exists, which is the 72G
+  runner (see ublue-os/image-template#259). Unrelated:
+  ublue-os/image-template#249 is a different failure (an immediate
+  `crun: unknown version specified`, not a hang). **Watch:** 26.04 is a
+  preview image; revert to 24.04 if it misbehaves. `build-disk.yml` is still
+  on 24.04 and could hit the same thing — move it if this holds up.
+  **Caught late:** 26.04 also ignores `sudo -E` ("preserving the entire
+  environment is not supported"), which silently dropped every matrix override
+  in the Build Image step. `just` fell back to `image-template.env`, so the
+  2026-08-15 run published `freizzite-deck:latest`/`:testing` built from the
+  **dx-nvidia** base under deck tags. Fixed by passing the values through
+  `sudo env …`, plus an assertion that the built image's
+  `io.github.freiheit.build.base-ref` label matches the intended base — the
+  failure was invisible precisely because dotenv has a default for every name
+  CI overrides. Dated tags from that run still point at the wrong content and
+  want deleting.
+
+- **os-release branding:** `build_files/image-info`, run last from `build.sh`,
+  modelled on upstream bazzite's `build_files/image-info`. Sets `NAME`,
+  `PRETTY_NAME`, `VARIANT`, `DEFAULT_HOSTNAME`, `HOME_URL`,
+  `BUG_REPORT_URL`, `BOOTLOADER_NAME` and `/etc/system-release` (the
+  grub2-mkconfig distributor). `ID`, `ID_LIKE`, `VARIANT_ID`, `CPE_NAME`,
+  `LOGO`, `ANSI_COLOR`, `IMAGE_ID` and `image-info.json` keep upstream values
+  on purpose, so nothing keying off `ID=bazzite` breaks. A trailing `grep -q`
+  fails the build if the seds matched nothing. Same change in freirora.
+  **Check** the `os-release` dump in the build log, then `hostnamectl` and the
+  GRUB menu on a deployed system. Open questions: `VERSION=` still reads
+  `"…(Kinoite)"` (fine); `/etc/system-release` drops upstream's `(Kinoite)`
+  suffix because `BASE_IMAGE_NAME` isn't available here.
+
+- **testing-tag builds:** `build.yml` computes its matrix in a preflight
+  `matrix` job that probes `ghcr.io/ublue-os/<base>:testing`
+  (`docker buildx imagetools inspect`) and adds a `testing` stream per variant
+  only when it exists. Testing publishes only `testing`-prefixed tags (avoids a
+  bare-date collision with stable); ArtifactHub push runs once per package
+  (stable stream); `clean.yml` excludes `testing`. **Validate via a PR first**
+  (matrix + both stream builds run, nothing publishes), then let it hit main.
+  Heads-up: job display names are now `<image> (<stream>)`, so any branch-
+  protection required checks referencing the old "Build and push image" name
+  need updating. If testing streams unexpectedly don't appear, check the matrix
+  job log — an auth failure on the probe would need a ghcr login added there.
+- **Artifact Hub listings:** deck `repositoryID` corrected to
+  `aacc915a-…` (was the wrong `eb2d1d48-…`, why deck wasn't verified). Verify
+  deck flips to Verified Publisher after the next build's oras push;
+  dx-nvidia already verified and both render clean.
+- **Old-image cleanup:** first live `clean.yml` run pruning ~1,900 old-pipeline
+  images across both packages; confirm it completes without a permission wall.
+- **README badges:** added build-disk, CodeQL, and license badges. Confirm all
+  render (especially the CodeQL default-setup badge path).
+
+## Done (validated)
+
+- _(move items here once fully validated)_
