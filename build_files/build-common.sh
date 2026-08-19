@@ -57,12 +57,5 @@ systemctl enable "${COMMON_SYSTEMCTL[@]}"
 tailscale completion fish > /etc/fish/completions/tailscale.fish
 tailscale completion bash > /etc/bash_completion.d/tailscale
 
-# Both of these are monochrome emoji fonts that outrank Noto Color Emoji in
-# fontconfig's fallback, so any app that asks for a character without tagging
-# the run as emoji (lang=und-zsye) renders grey glyphs instead of color ones --
-# Chromium/Electron included. Nothing requires either; ibus-typing-booster only
-# recommends them, so removing them does not drag anything else out.
-dnf5 -y remove gdouros-symbola-fonts google-noto-emoji-fonts
-
 # Fail the build if any requested package didn't actually get installed
 verify_packages_installed "${COMMON_PACKAGES[@]}"
