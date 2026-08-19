@@ -59,7 +59,6 @@ DESKTOP_PACKAGES=(
 
     # GUI apps pulled off Flathub: thin RPMs over Qt/KDE/GTK libs already in the image
     calibre
-    deja-dup
     flatseal
     gnome-firmware
     gnome-font-viewer
