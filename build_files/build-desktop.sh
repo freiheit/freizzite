@@ -56,6 +56,19 @@ DESKTOP_PACKAGES=(
 
     # LLM CLI
     claude-code
+
+    # GUI apps pulled off Flathub: thin RPMs over Qt/KDE/GTK libs already in the image
+    calibre
+    deja-dup
+    flatseal
+    gnome-firmware
+    gnome-font-viewer
+    gwenview
+    haruna
+    kcalc
+    mediawriter
+    rssguard
+    vlc
 )
 
 DESKTOP_TERRA_PACKAGES=(
@@ -116,11 +129,18 @@ DESKTOP_TERRA_PACKAGES=(
 
     # Website thingy
     hugo
+
+    # GUI apps pulled off Flathub (terra). lact needs a root daemon with direct
+    # amdgpu access, which the Flatpak can only approximate.
+    kontainer
+    lact
+    protonplus
 )
 
 # Services I like to be sure are set up
 DESKTOP_SYSTEMCTL=(
     chrony-wait.service
+    lactd.service
     man-db-cache-update.service
     man-db-restart-cache-update.service
     plocate-updatedb.timer
