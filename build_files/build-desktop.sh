@@ -19,7 +19,7 @@ dnf5 config-manager addrepo --id=code \
   --set=name="Visual Studio Code" \
   --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
   --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc \
-  --set=gpgcheck=1 --set=autorefresh=1 --set=type=rpm-md
+  --set=gpgcheck=1 --set=type=rpm-md
 
 # https://support.1password.com/install-linux/#fedora-or-red-hat-enterprise-linux
 rpm --import https://downloads.1password.com/linux/keys/1password.asc
