@@ -7,3 +7,5 @@ rules:
   - base: main
     upstream: ublue-os:main
     mergeMethod: none
+    assignees:
+      - freiheit
