@@ -130,7 +130,7 @@ DESKTOP_TERRA_PACKAGES=(
     hugo
 
     # GUI apps pulled off Flathub (terra). lact needs a root daemon with direct
-    # amdgpu access, which the Flatpak can only approximate.
+    # GPU access, which the Flatpak can only approximate.
     kontainer
     lact
     protonplus
