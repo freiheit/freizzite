@@ -14,7 +14,7 @@ on:
     # job resolves each variant's upstream base digest and drops the targets
     # that have not moved, so a full build only runs when something changed.
     # Minute :17 is deliberate -- scheduled runs at :00 queue worst.
-    - cron: "17 11-20 * * *" # hourly, 11am-8pm US/Pacific
+    - cron: "17 11-23 * * *" # hourly, 11am-11pm US/Pacific
       timezone: "America/Los_Angeles"
     # Unconditional rebuild of every target, bypassing the gate entirely. It
     # picks up floating build-time deps the gate cannot see (terra, COPRs, the
