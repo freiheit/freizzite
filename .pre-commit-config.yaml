@@ -2,7 +2,7 @@
 repos:
   # Misc checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files # Require LFS for files over 500kB
       - id: check-executables-have-shebangs # Make sure scripts have ok #! lines
@@ -32,12 +32,12 @@ repos:
   # Linter for markdown
   # Requires: sudo apt install npm
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint-fix
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1-1
     hooks:
     - id: shellcheck
       # For legacy projects, optionally uncomment 1 of these:
@@ -45,13 +45,13 @@ repos:
       args: ["--severity=error"]
 
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.11.0-1
+    rev: v3.13.1-1
     hooks:
     - id: shfmt
       args: ["--indent=4"]
 
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.29.0
+    rev: v1.38.0
     hooks:
       - id: yamllint
         args: [--strict, '-d', "{rules: {line-length: {max: 180}}}"]
@@ -59,7 +59,7 @@ repos:
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.15.12
+    rev: v0.16.4
     hooks:
       # Run the linter.
       - id: ruff-check
