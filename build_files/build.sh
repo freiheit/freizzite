@@ -2,6 +2,9 @@
 
 set -ouex pipefail
 
+# shellcheck source=/dev/null
+source /ctx/lib-verify.sh
+
 BUILD_VARIANT="${BUILD_VARIANT:-bazzite-dx-nvidia}"
 echo "Building variant: ${BUILD_VARIANT}"
 
@@ -67,6 +70,52 @@ case "${BUILD_VARIANT}" in
         /ctx/build-desktop.sh
         ;;
 esac
+
+############################
+# runtime linkage check    #
+############################
+# Everything below is dlopen'd or exec'd only at login time, so a broken ABI
+# ships green and fails on the user's monitor. Checked after both build legs so
+# the list reflects the finished image.
+#
+# Add anything whose breakage is only visible at runtime. Globs work: they
+# expand here, and `verify_libs_resolve` fails on a path that does not exist,
+# so a rename shows up as a red build rather than a silently skipped check.
+LINK_CHECK=(
+    # Login path. This is what broke on 2026-09-03: the greeter's wallpaper
+    # plugin failed to resolve, Main.qml never instantiated, and the image
+    # booted to a cursor on a black screen with no way in.
+    /usr/bin/plasmalogin
+    /usr/libexec/plasmalogin-helper
+    /usr/libexec/plasma-login-greeter
+    /usr/lib64/qt6/qml/org/kde/plasma/wallpapers/image/libplasma_wallpaper_image.so
+
+    # Screen locker. Same failure mode as the greeter, except it locks you out
+    # of a session you were already using.
+    /usr/libexec/kscreenlocker_greet
+
+    # Compositor and shell.
+    /usr/bin/kwin_wayland
+    /usr/bin/startplasma-wayland
+    /usr/bin/plasmashell
+    /usr/bin/ksmserver
+    /usr/bin/kded6
+
+    # QML plugin stacks the greeter, locker and shell all dlopen.
+    /usr/lib64/qt6/qml/org/kde/plasma/core/libcorebindingsplugin.so
+    /usr/lib64/qt6/qml/org/kde/plasma/plasmoid/libplasmoidplugin.so
+    /usr/lib64/qt6/qml/org/kde/kirigami/libKirigamiplugin.so
+
+    # Gaming-mode session (bazzite-deck, and Steam's gamescope session on
+    # desktop) does not go through plasmashell at all.
+    /usr/bin/gamescope
+
+    # Desktop apps whose breakage is loud but not lockout-grade.
+    /usr/bin/systemsettings
+    /usr/bin/dolphin
+)
+
+verify_libs_resolve "${LINK_CHECK[@]}"
 
 ####################
 # image hygiene    #
