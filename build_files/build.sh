@@ -61,13 +61,28 @@ var_dirs >/tmp/var-dirs-before
 ################################
 # variant-specific build steps #
 ################################
+# Login-manager binaries for the runtime linkage check below. They differ per
+# variant: the desktop variants get plasma-login-manager (Fedora's Plasma 6.7
+# replacement for SDDM), while bazzite-deck is still SDDM and autologins into
+# gamescope via /usr/libexec/bazzite-autologin.
+LINK_CHECK_VARIANT=()
+
 case "${BUILD_VARIANT}" in
     bazzite-deck)
         echo "Deck variant: nothing extra for now"
+        # TODO: add deck's SDDM binaries here once their paths are confirmed
+        # against the bazzite-deck image. Guessing them would trade this
+        # variant's build being red for it being red in a less obvious way.
         ;;
     *)
         echo "Running desktop-specific build..."
         /ctx/build-desktop.sh
+        LINK_CHECK_VARIANT+=(
+            /usr/bin/plasmalogin
+            /usr/libexec/plasmalogin-helper
+            /usr/libexec/plasma-login-greeter
+            /usr/bin/startplasma-login-wayland
+        )
         ;;
 esac
 
@@ -82,12 +97,9 @@ esac
 # expand here, and `verify_libs_resolve` fails on a path that does not exist,
 # so a rename shows up as a red build rather than a silently skipped check.
 LINK_CHECK=(
-    # Login path. This is what broke on 2026-09-03: the greeter's wallpaper
-    # plugin failed to resolve, Main.qml never instantiated, and the image
-    # booted to a cursor on a black screen with no way in.
-    /usr/bin/plasmalogin
-    /usr/libexec/plasmalogin-helper
-    /usr/libexec/plasma-login-greeter
+    # Wallpaper plugin. This is what broke on 2026-09-03: it failed to resolve,
+    # the greeter's Main.qml never instantiated, and the image booted to a
+    # cursor on a black screen with no way in.
     /usr/lib64/qt6/qml/org/kde/plasma/wallpapers/image/libplasma_wallpaper_image.so
 
     # Screen locker. Same failure mode as the greeter, except it locks you out
@@ -115,7 +127,7 @@ LINK_CHECK=(
     /usr/bin/dolphin
 )
 
-verify_libs_resolve "${LINK_CHECK[@]}"
+verify_libs_resolve "${LINK_CHECK[@]}" "${LINK_CHECK_VARIANT[@]}"
 
 ####################
 # image hygiene    #
