@@ -1,7 +1,7 @@
 # Base image is parameterized so one repo can build multiple variants
 # (see the matrix in .github/workflows/build.yml and image-template.env)
 ARG BASE_IMAGE=bazzite-dx-nvidia
-ARG BASE_TAG=stable@sha256:6f93af1f493ce3b122902acfbdd8b7e41fa5ffab763aa43b7a28c2db2e38a789
+ARG BASE_TAG=stable@sha256:9556db65991d57a03a7dc18e4ba28a686d8bcdcd6b61235aa69c8267bb22ff76
 ARG BUILD_VARIANT=bazzite-dx-nvidia
 
 # Allow build scripts to be referenced without being copied into the final image
