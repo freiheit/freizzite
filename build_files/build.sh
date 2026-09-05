@@ -39,6 +39,14 @@ if [ "${terra_status}" = "404" ]; then
     sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
 fi
 
+# Mirror upstream bazzite c9ef733: lock qt6/plasma at the base image's
+# versions so our own dnf installs can't drift qt6-qtbase past the Plasma/KF6
+# builds linked against its private ABI (Qt_6.11_PRIVATE_API symbol node --
+# the 2026-09-02 black-screen breaker). RPM deps don't catch this: the
+# qt6-qtbase-private-abi provide is identical across same-version rebuilds.
+# Redundant (harmless) once bazzite stable ships the same lock in the base.
+dnf5 versionlock add 'qt6-*' 'plasma-*'
+
 # Copy the contents of system_files/ into the image
 cp -avf "/ctx/system_files"/. /
 
