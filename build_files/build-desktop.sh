@@ -84,6 +84,9 @@ DESKTOP_TERRA_PACKAGES=(
     git-filter-repo
     git-koji # terra
     git-lfs
+    golang
+    golang-bin
+    golang-docs
     jq
     nodejs
     nodejs-npm
