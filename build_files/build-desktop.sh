@@ -134,11 +134,17 @@ DESKTOP_TERRA_PACKAGES=(
     kontainer
     lact
     protonplus
+
+    # Fan control (terra) — same pair bazzite's ujust install-coolercontrol
+    # layers. coolercontrol (GUI) hard-requires coolercontrold (daemon).
+    coolercontrol
+    liquidctl
 )
 
 # Services I like to be sure are set up
 DESKTOP_SYSTEMCTL=(
     chrony-wait.service
+    coolercontrold.service
     lactd.service
     man-db-cache-update.service
     man-db-restart-cache-update.service
