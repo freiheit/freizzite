@@ -61,12 +61,25 @@ tailscale completion bash > /etc/bash_completion.d/tailscale
 # OpenVox agent + g10k       #
 ##############################
 # Masterless fleet config lives in the openvox-control repo; see openvox.md.
-# Repo file ships in system_files/etc/yum.repos.d/openvox.repo, pinned to
-# fedora/44 on purpose (packaging lag must never block a rebuild).
+# Repo file ships in system_files/etc/yum.repos.d/openvox.repo.
 #
 # /opt is a real directory in this image (Containerfile un-symlinks it), so
 # /opt/puppetlabs ships in the image proper and updates with it -- the
 # Aurora/Bluefin /var/opt seed-once trap does not apply. No relocation needed.
+
+# OpenVox publishes one repo per Fedora release and lags GA by ~6 weeks; fall
+# back to the previous release while the current one does not exist, and pick
+# the current one up automatically once it appears. Only a definite 404
+# counts: a network blip reports 000, leaves $releasever alone, and the dnf
+# install below then fails the build rather than silently pinning wrong.
+openvox_release="$(rpm -E %fedora)"
+openvox_status="$(curl -sSo /dev/null -w '%{http_code}' \
+    "https://yum.voxpupuli.org/openvox9/fedora/${openvox_release}/$(uname -m)/repodata/repomd.xml" || true)"
+if [ "${openvox_status}" = "404" ]; then
+    echo "NOTE: openvox9 fedora/${openvox_release} is not published; falling back to fedora/$((openvox_release - 1))"
+    sed -i "s/[$]releasever/$((openvox_release - 1))/g" /etc/yum.repos.d/openvox.repo
+fi
+
 dnf5 -y install --enable-repo=openvox9 openvox-agent
 
 # vardir defaults to /opt/puppetlabs/puppet/cache, read-only at runtime on

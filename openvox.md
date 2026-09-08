@@ -6,9 +6,13 @@ the `openvox-control` repo, which expects the agent to already exist on
 
 ## Status (2026-09-07): implemented, build+VM verification pending
 
-- Install lives in `build_files/build-common.sh` (both variants); pinned repo
-  file in `system_files/etc/yum.repos.d/openvox.repo` with `gpgcheck=1`
-  (packages are signed, key `5fb999c2d62ff3d9`).
+- Install lives in `build_files/build-common.sh` (both variants); repo file in
+  `system_files/etc/yum.repos.d/openvox.repo` with `gpgcheck=1` (packages are
+  signed, key `5fb999c2d62ff3d9`). Not a hard pin: the build probes the
+  current Fedora release's repo and falls back one release on a definite 404
+  (same idiom as the terra fallback in build.sh), so an F45 image builds
+  against fedora/44 until OpenVox publishes fedora/45, then picks it up
+  automatically.
 - **The relocation below is NOT needed.** freizzite's own Containerfile already
   un-symlinks `/opt` into a real image directory, so `/opt/puppetlabs` ships in
   the image and updates with it. Confirmed on `monolith`: `/opt` is a real dir.
@@ -34,13 +38,14 @@ shipped Fedora 44 packages roughly six weeks after Fedora 44 GA, and Fedora 45
 GA is targeted for 2026-10-20. A Containerfile that installs from
 `openvox9/fedora/$releasever` would stall the image every October.
 
-The fix is to pin the repo to fedora/44 and leave it there:
+The fix is a probe with one-release fallback (see Status above); the original
+plan was a hard pin to fedora/44:
 
 ```text
 https://yum.voxpupuli.org/openvox9/fedora/44/$basearch
 ```
 
-This is safe because the AIO package is self-contained. Verified from repodata
+Running one release behind is safe because the AIO package is self-contained. Verified from repodata
 and ELF inspection:
 
 - RPM builds with `Autoprov: 0` / `Autoreq: 0`; the only explicit requires are
