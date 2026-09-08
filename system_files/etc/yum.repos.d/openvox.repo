@@ -1,0 +1,12 @@
+[openvox9]
+name=OpenVox 9 (deliberately pinned to Fedora 44 -- see openvox.md)
+# Pinned, not $releasever: OpenVox packaging lags Fedora GA by ~6 weeks, and
+# the AIO RPM is self-contained (Autoreq: 0, vendored Ruby/OpenSSL), so a
+# Fedora bump must never stall the image build waiting on this repo.
+baseurl=https://yum.voxpupuli.org/openvox9/fedora/44/$basearch
+# enabled=0: the image ships the agent; host dnf and bootc-image-builder
+# depsolve have no business here. The build enables it explicitly.
+enabled=0
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://yum.voxpupuli.org/GPG-KEY-openvox.pub

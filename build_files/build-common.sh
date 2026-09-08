@@ -57,5 +57,41 @@ systemctl enable "${COMMON_SYSTEMCTL[@]}"
 tailscale completion fish > /etc/fish/completions/tailscale.fish
 tailscale completion bash > /etc/bash_completion.d/tailscale
 
+##############################
+# OpenVox agent + g10k       #
+##############################
+# Masterless fleet config lives in the openvox-control repo; see openvox.md.
+# Repo file ships in system_files/etc/yum.repos.d/openvox.repo, pinned to
+# fedora/44 on purpose (packaging lag must never block a rebuild).
+#
+# /opt is a real directory in this image (Containerfile un-symlinks it), so
+# /opt/puppetlabs ships in the image proper and updates with it -- the
+# Aurora/Bluefin /var/opt seed-once trap does not apply. No relocation needed.
+dnf5 -y install --enable-repo=openvox9 openvox-agent
+
+# vardir defaults to /opt/puppetlabs/puppet/cache, read-only at runtime on
+# bootc. server=localhost because OpenVox 9 raises ArgumentError when run as
+# root with server unset, even under `puppet apply`.
+printf '[main]\nserver = localhost\nvardir = /var/lib/puppetlabs/puppet/cache\npublicdir = /var/lib/puppetlabs/puppet/public\n' \
+    > /etc/puppetlabs/puppet/puppet.conf
+
+# Do NOT enable puppet.service: masterless fleet, profile::base masks it.
+
+# Runs the vendored Ruby, so this is the standing falsifier for "does the fc44
+# AIO actually execute on this Fedora release" -- it fails the build the day a
+# base bump breaks the vendored toolchain.
+/opt/puppetlabs/bin/puppet --version
+
+# g10k: single static binary, deploys the Puppetfile without a gem toolchain.
+G10K_VERSION=0.10.0
+G10K_SHA256=a1817f7a4ee0d75be44ff8b1054b80ee016a72a42e8682d733c3ae8e33852f12
+curl -fsSL -o /tmp/g10k.tar.gz \
+    "https://github.com/voxpupuli/g10k/releases/download/v${G10K_VERSION}/g10k_${G10K_VERSION}_linux_amd64.tar.gz"
+echo "${G10K_SHA256}  /tmp/g10k.tar.gz" | sha256sum -c -
+tar -xzf /tmp/g10k.tar.gz -C /usr/bin g10k
+chmod 0755 /usr/bin/g10k
+rm -f /tmp/g10k.tar.gz
+/usr/bin/g10k -version
+
 # Fail the build if any requested package didn't actually get installed
-verify_packages_installed "${COMMON_PACKAGES[@]}"
+verify_packages_installed "${COMMON_PACKAGES[@]}" openvox-agent
