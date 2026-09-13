@@ -18,7 +18,7 @@ COMMON_PACKAGES=(
     htop
     joe
     jupp
-    keychain
+    # keychain # fuck you keychain-3.0
     ms-core-tahoma-fonts
     ms-core-verdana-fonts
     nano
