@@ -95,7 +95,10 @@ DESKTOP_TERRA_PACKAGES=(
     perltidy
     pre-commit
     ripgrep
+    ruby-devel
+    rubygem-rspec
     rubygems
+    rubygems-devel
     ruff
     ShellCheck
     shfmt
