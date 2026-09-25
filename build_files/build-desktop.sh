@@ -97,7 +97,7 @@ DESKTOP_TERRA_PACKAGES=(
     ripgrep
     ruby-devel
     rubygem-puppet-lint-doc
-    rubygem-puppet-lint.noarch
+    rubygem-puppet-lint
     rubygem-rspec
     rubygems
     rubygems-devel
