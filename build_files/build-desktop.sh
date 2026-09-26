@@ -88,6 +88,7 @@ DESKTOP_TERRA_PACKAGES=(
     golang-bin
     golang-docs
     jq
+    libffi-devel
     nodejs
     nodejs-npm
     perl-App-cpanminus
@@ -112,6 +113,7 @@ DESKTOP_TERRA_PACKAGES=(
     uv
     yamllint
     yq
+
 
     # Handy tools
     fzf
