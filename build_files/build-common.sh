@@ -11,6 +11,7 @@ COMMON_PACKAGES=(
     bitstream-vera-fonts-all
     chezmoi
     etckeeper
+    btrfsmaintenance # scrub/balance timers; openvox-control profile::btrfs drives them
     firacode-nerd-fonts
     firamono-nerd-fonts
     google-android-emoji-fonts
