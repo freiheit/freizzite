@@ -8,6 +8,7 @@ source /ctx/lib-verify.sh
 # Verified installed after the transaction; a missing one fails the build.
 COMMON_PACKAGES=(
     age
+    below # per-cgroup resource history on disk; replay after an OOM or a hard reset
     bitstream-vera-fonts-all
     chezmoi
     etckeeper
@@ -43,6 +44,7 @@ COMMON_PACKAGES_OPTIONAL=(
 
 # Common services for all variants
 COMMON_SYSTEMCTL=(
+    below.service
     etckeeper.timer
     tailscaled.service
 )
