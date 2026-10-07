@@ -127,7 +127,6 @@ DESKTOP_TERRA_PACKAGES=(
     # Prefer "native" over flathub so Rich Presence works better (terra)
     vesktop
     discord
-    discord-canary
 
     # Various (de)compression tools
     bzip2
