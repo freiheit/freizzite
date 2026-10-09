@@ -167,6 +167,12 @@ dnf -y install --skip-unavailable --enable-repo=terra "${DESKTOP_TERRA_PACKAGES[
 
 systemctl enable "${DESKTOP_SYSTEMCTL[@]}"
 
+# steamdeck-dsp's handheld audio profiles. They copy into /usr/local, which
+# the Containerfile makes read-only, so they fail every boot; and no profile
+# exists for desktop boards anyway. The deck variant keeps them.
+systemctl mask pipewire-workaround.service wireplumber-workaround.service \
+    pipewire-sysconf.service wireplumber-sysconf.service
+
 # redirect $HOME because starship and 1password/op really like to write cache files under /root/
 HOME=/var/tmp starship completions fish > /etc/fish/completions/starship.fish
 HOME=/var/tmp starship completions bash > /etc/bash_completion.d/starship
