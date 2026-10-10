@@ -20,7 +20,7 @@ COMMON_PACKAGES=(
     htop
     joe
     jupp
-    # keychain # fuck you keychain-3.0
+    keychain # 3.0.4-4+ gates /etc/profile.d/keychain.sh on ~/.keychainrc (rhbz#2529776)
     ms-core-tahoma-fonts
     ms-core-verdana-fonts
     nano
