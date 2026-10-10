@@ -345,29 +345,19 @@ jobs:
           echo "verified: ${IMAGE_NAME}:${DEFAULT_TAG} built from ${got}"
 
       # This is optional, this provides smaller delta updates
-      # Freizzite: unseeded since 2026-10-10. Seeding the chunker with the
-      # previously published image (ostree-rechunk-seeded) has tripped an
-      # ostree-ext assertion in Chunking::process_mapping on every build since
-      # 2026-10-09 (bootc-dev/bootc#1885, open upstream). bazzite itself
-      # rechunks without a baseline; chunkah is the upstream-recommended way
-      # to get the deltas back.
-      - name: Rechunk with rpm-ostree
+      # Freizzite: chunkah (https://github.com/coreos/chunkah) since 2026-10-10.
+      # rpm-ostree's build-chunked-oci seeded with the previous image panicked
+      # in ostree-ext on every build from 2026-10-09 (bootc-dev/bootc#1885);
+      # unseeded it works but shares fewer layers between builds. chunkah is
+      # what upstream recommends instead. Runs as root like the build, since
+      # the image lives in root's podman storage.
+      - name: Rechunk with Chunkah
         id: rechunk
         timeout-minutes: 70
         run: |
-          sudo -E $(command -v just) ostree-rechunk \
+          sudo -E $(command -v just) rechunk \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
-
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    just rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
 
       - name: Generate Build Tags
         id: gen-build-tags
