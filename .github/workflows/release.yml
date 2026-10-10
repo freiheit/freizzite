@@ -34,10 +34,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          # The release tag goes on the images' source commit, which may be
-          # several commits behind HEAD.
-          fetch-depth: 0
 
       - name: Decide
         id: gate
@@ -63,13 +59,14 @@ jobs:
         run: |
           set -euo pipefail
           tag="$(jq -r .tag <<<"${RESULT}")"
-          target="$(jq -r .target <<<"${RESULT}")"
+          source="$(jq -r .source_commit <<<"${RESULT}")"
           url="$(jq -r .upstream_url <<<"${RESULT}")"
           prev="$(jq -r .prev_tag <<<"${RESULT}")"
           registry="ghcr.io/${OWNER,,}"
 
           {
             echo "Freizzite rebuilt on [Bazzite ${tag}](${url}); see that release for what changed in the base."
+            echo "Images built from [\`${source:0:7}\`](https://github.com/${REPO}/commit/${source})."
             echo
             echo "| Image | Pinned ref |"
             echo "| --- | --- |"
@@ -80,14 +77,14 @@ jobs:
             echo
           } > notes.md
 
-          # GITHUB_TOKEN may create a release whose target is a branch, but a
-          # commit SHA target is refused with 403 "Resource not accessible by
-          # integration" (probed 2026-10-10). Push the tag ourselves, then
-          # release on the existing tag; target is ignored once the tag exists.
-          git tag "${tag}" "${target}"
-          git push origin "refs/tags/${tag}"
-
-          args=(--title "${tag}" --notes-file notes.md --generate-notes)
+          # The tag lands on the branch tip, not on the images' source commit:
+          # GITHUB_TOKEN may not create a ref whose workflow files differ from
+          # the default branch ("refusing to allow a GitHub App to create or
+          # update workflow ... without `workflows` permission"), and renovate
+          # bumps workflow files often enough that an older commit usually
+          # differs. The source commit is recorded in the notes instead. A PAT
+          # with `workflows` scope would allow tagging the exact commit.
+          args=(--target "${GITHUB_REF_NAME}" --title "${tag}" --notes-file notes.md --generate-notes)
           [[ -n "${prev}" ]] && args+=(--notes-start-tag "${prev}")
           gh release create "${tag}" "${args[@]}"
-          echo "Released ${tag} at ${target:0:7}: $(gh release view "${tag}" --json url -q .url)" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Released ${tag} (images from ${source:0:7}): $(gh release view "${tag}" --json url -q .url)" >> "${GITHUB_STEP_SUMMARY}"

@@ -51,7 +51,8 @@ bucket, cache, TLS, custom domain). Ties into releases below.
 GitHub Release after any successful build once every stable image carries the
 newest stable bazzite release's commit (`org.opencontainers.image.revision`,
 inherited from the pinned base) and that tag has no release here yet. Tag =
-upstream tag, target = the images' source commit, notes = upstream link +
+upstream tag on the main tip (GITHUB_TOKEN cannot tag an older commit whose
+workflow files differ), notes = upstream link + the images' source commit +
 pinned image refs + GitHub generated notes since the previous release. No
 SBOM package diff: bazzite's `changelog.py` needs SBOMs we do not attach.
 **Still open:** build ISOs → upload to B2 → add hosted ISO URLs to the notes.
