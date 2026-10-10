@@ -5,7 +5,7 @@
 # built into every published stable image and we have not released it yet.
 # Prints a single JSON object on stdout:
 #
-#   {"release":true,"reason":"...","tag":"44.20261006.1","target":"<sha>",
+#   {"release":true,"reason":"...","tag":"44.20261006.1","source_commit":"<sha>",
 #    "upstream_url":"https://github.com/ublue-os/bazzite/releases/tag/...",
 #    "prev_tag":"44.20260902",
 #    "images":[{"name":"freizzite-deck","digest":"sha256:...","base_digest":"sha256:..."}]}
@@ -39,16 +39,16 @@ LABEL_NS="${LABEL_NS:-io.github.freiheit.build}"
 images='[]'
 
 emit() {
-    # emit <release-bool> <reason> [tag] [target] [upstream-url] [prev-tag]
+    # emit <release-bool> <reason> [tag] [source-commit] [upstream-url] [prev-tag]
     jq -cn \
         --argjson release "$1" \
         --arg reason "$2" \
         --arg tag "${3:-}" \
-        --arg target "${4:-}" \
+        --arg source_commit "${4:-}" \
         --arg upstream_url "${5:-}" \
         --arg prev_tag "${6:-}" \
         --argjson images "${images}" \
-        '{release: $release, reason: $reason, tag: $tag, target: $target,
+        '{release: $release, reason: $reason, tag: $tag, source_commit: $source_commit,
           upstream_url: $upstream_url, prev_tag: $prev_tag, images: $images}'
     exit 0
 }
@@ -87,7 +87,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Every published stable image must be built from that commit, all from one
-# source commit (that is where the release tag goes).
+# source commit (recorded in the release notes).
 # ---------------------------------------------------------------------------
 target=""
 while IFS='|' read -r name _base _desc; do
