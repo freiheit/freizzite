@@ -214,6 +214,8 @@ ostree-rechunk $target_image=image_name $tag=default_tag:
 
 # Freizzite: like ostree-rechunk, but seeds the previously published chunked
 # image so unchanged content keeps identical layer digests across builds,
+# UNUSED since 2026-10-10: the seeded path panics in ostree-ext
+# (bootc-dev/bootc#1885). Re-enable in build.yml once that is fixed upstream.
 # shrinking bootc upgrade downloads. build-chunked-oci reuses the chunk
 # layout of whatever chunked image it finds at the output ref. Falls back to
 # a plain rechunk when no previous image can be pulled (first build of a

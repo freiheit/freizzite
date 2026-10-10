@@ -345,13 +345,17 @@ jobs:
           echo "verified: ${IMAGE_NAME}:${DEFAULT_TAG} built from ${got}"
 
       # This is optional, this provides smaller delta updates
-      # Freizzite: seeded variant reuses the previous published image's chunk
-      # layout so unchanged content keeps identical layer digests
+      # Freizzite: unseeded since 2026-10-10. Seeding the chunker with the
+      # previously published image (ostree-rechunk-seeded) has tripped an
+      # ostree-ext assertion in Chunking::process_mapping on every build since
+      # 2026-10-09 (bootc-dev/bootc#1885, open upstream). bazzite itself
+      # rechunks without a baseline; chunkah is the upstream-recommended way
+      # to get the deltas back.
       - name: Rechunk with rpm-ostree
         id: rechunk
         timeout-minutes: 70
         run: |
-          sudo -E $(command -v just) ostree-rechunk-seeded \
+          sudo -E $(command -v just) ostree-rechunk \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
