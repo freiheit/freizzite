@@ -1,0 +1,79 @@
+---
+name: Release
+# Cut a GitHub Release once every published stable image has been rebuilt on
+# the newest stable bazzite release. The decision lives in
+# .github/scripts/release-gate.sh; this file only runs it and publishes.
+on:
+  workflow_run:
+    workflows: ["Build container image"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  release:
+    name: Release if due
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+      packages: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      UPSTREAM_REPO: ublue-os/bazzite
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Decide
+        id: gate
+        run: |
+          set -euo pipefail
+          # Same variant list the build uses, so a new variant is covered here
+          # without a second copy to keep in sync.
+          VARIANTS="$(yq -r '.jobs.matrix.steps[] | select(.id == "gen") | .env.VARIANTS' .github/workflows/build.yml)"
+          export VARIANTS
+          result="$(.github/scripts/release-gate.sh)"
+          jq . <<<"${result}"
+          echo "result=${result}" >> "${GITHUB_OUTPUT}"
+          if [[ "$(jq -r .release <<<"${result}")" == "true" ]]; then
+            echo "**Releasing $(jq -r .tag <<<"${result}")** - $(jq -r .reason <<<"${result}")" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "**No release** - $(jq -r .reason <<<"${result}")" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Create release
+        if: fromJSON(steps.gate.outputs.result).release
+        env:
+          RESULT: ${{ steps.gate.outputs.result }}
+        run: |
+          set -euo pipefail
+          tag="$(jq -r .tag <<<"${RESULT}")"
+          target="$(jq -r .target <<<"${RESULT}")"
+          url="$(jq -r .upstream_url <<<"${RESULT}")"
+          prev="$(jq -r .prev_tag <<<"${RESULT}")"
+          registry="ghcr.io/${OWNER,,}"
+
+          {
+            echo "Freizzite rebuilt on [Bazzite ${tag}](${url}); see that release for what changed in the base."
+            echo
+            echo "| Image | Pinned ref |"
+            echo "| --- | --- |"
+            jq -r --arg r "${registry}" \
+              '.images[] | "| \(.name) | `\($r)/\(.name)@\(.digest)` |"' <<<"${RESULT}"
+            echo
+            echo "Pin a machine to this release with \`sudo bootc switch <pinned ref>\`."
+            echo
+          } > notes.md
+
+          args=(--target "${target}" --title "${tag}" --notes-file notes.md --generate-notes)
+          [[ -n "${prev}" ]] && args+=(--notes-start-tag "${prev}")
+          gh release create "${tag}" "${args[@]}"
+          echo "Released ${tag} at ${target:0:7}: $(gh release view "${tag}" --json url -q .url)" >> "${GITHUB_STEP_SUMMARY}"

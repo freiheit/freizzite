@@ -45,16 +45,16 @@ Eric's wheelhouse. Possible bonus: Fastly Fast Forward (free CDN for OSS) —
 verify eligibility. **Next:** design upload + Fastly service (origin = B2
 bucket, cache, TLS, custom domain). Ties into releases below.
 
-### Releases + ISO automation [ ] (bottom)
+### Releases + ISO automation [~] (bottom)
 
-Rebuild release automation (old `generate_release.yml` + `changelog.py` were
-deleted as broken). Target flow: build ISOs → upload to B2 → publish a GitHub
-Release with notes pointing at hosted ISO URLs.
-**Trigger (?):** manual to start, and/or auto after a successful container build
-that followed an upstream bazzite release.
-**Changelog approach (?):** `release-please` (Conventional-Commits driven, fits
-Eric's commit style) vs bazzite `changelog.py` (diffs package versions via SBOMs
-— richer image-level notes, heavier).
+**Done 2026-10-10:** `release.yml` + `.github/scripts/release-gate.sh` cut a
+GitHub Release after any successful build once every stable image carries the
+newest stable bazzite release's commit (`org.opencontainers.image.revision`,
+inherited from the pinned base) and that tag has no release here yet. Tag =
+upstream tag, target = the images' source commit, notes = upstream link +
+pinned image refs + GitHub generated notes since the previous release. No
+SBOM package diff: bazzite's `changelog.py` needs SBOMs we do not attach.
+**Still open:** build ISOs → upload to B2 → add hosted ISO URLs to the notes.
 
 ## Deferred
 
