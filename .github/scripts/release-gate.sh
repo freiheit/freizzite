@@ -80,7 +80,7 @@ commit="$(awk -v t="refs/tags/${tag}^{}" '$2 == t { print $1 }' <<<"${refs}")"
 # Already released?
 # ---------------------------------------------------------------------------
 if existing="$(gh release view "${tag}" -R "${REPO}" --json tagName 2>&1)"; then
-    emit false "already released ${tag}" "${tag}" "${commit}" "${url}"
+    emit false "already released ${tag}" "${tag}" "" "${url}"
 elif ! grep -qi 'not found' <<<"${existing}"; then
     emit false "cannot check for an existing ${tag} release: $(oneline "${existing}")" "${tag}"
 fi
