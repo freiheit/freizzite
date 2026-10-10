@@ -34,6 +34,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The release tag goes on the images' source commit, which may be
+          # several commits behind HEAD.
+          fetch-depth: 0
 
       - name: Decide
         id: gate
@@ -51,24 +55,6 @@ jobs:
           else
             echo "**No release** - $(jq -r .reason <<<"${result}")" >> "${GITHUB_STEP_SUMMARY}"
           fi
-
-      - name: Probe (temporary)
-        env:
-          RESULT: ${{ steps.gate.outputs.result }}
-        run: |
-          set +e
-          tag="$(jq -r .tag <<<"${RESULT}")"; target="$(jq -r .target <<<"${RESULT}")"; prev="$(jq -r .prev_tag <<<"${RESULT}")"
-          probe() { echo "--- $1"; shift; gh api -i "$@" 2>&1 | sed -n '1p;/"message"/p'; }
-          probe "generate-notes target=sha" -X POST "repos/${REPO}/releases/generate-notes" \
-            -f tag_name="${tag}" -f target_commitish="${target}" -f previous_tag_name="${prev}"
-          probe "draft target=main" -X POST "repos/${REPO}/releases" -f tag_name="probe-${GITHUB_RUN_ID}-a" -f target_commitish=main -F draft=true
-          probe "draft target=sha" -X POST "repos/${REPO}/releases" -f tag_name="probe-${GITHUB_RUN_ID}-b" -f target_commitish="${target}" -F draft=true
-          probe "published target=main" -X POST "repos/${REPO}/releases" -f tag_name="probe-${GITHUB_RUN_ID}-c" -f target_commitish=main -F prerelease=true
-          probe "published target=sha" -X POST "repos/${REPO}/releases" -f tag_name="probe-${GITHUB_RUN_ID}-d" -f target_commitish="${target}" -F prerelease=true
-          probe "published target=sha generate_notes" -X POST "repos/${REPO}/releases" \
-            -f tag_name="probe-${GITHUB_RUN_ID}-e" -f target_commitish="${target}" -F prerelease=true -F generate_release_notes=true
-          for s in a b c d e; do gh release delete "probe-${GITHUB_RUN_ID}-${s}" -y --cleanup-tag 2>/dev/null; done
-          exit 0
 
       - name: Create release
         if: fromJSON(steps.gate.outputs.result).release
@@ -94,7 +80,14 @@ jobs:
             echo
           } > notes.md
 
-          args=(--target "${target}" --title "${tag}" --notes-file notes.md --generate-notes)
+          # GITHUB_TOKEN may create a release whose target is a branch, but a
+          # commit SHA target is refused with 403 "Resource not accessible by
+          # integration" (probed 2026-10-10). Push the tag ourselves, then
+          # release on the existing tag; target is ignored once the tag exists.
+          git tag "${tag}" "${target}"
+          git push origin "refs/tags/${tag}"
+
+          args=(--title "${tag}" --notes-file notes.md --generate-notes)
           [[ -n "${prev}" ]] && args+=(--notes-start-tag "${prev}")
           gh release create "${tag}" "${args[@]}"
           echo "Released ${tag} at ${target:0:7}: $(gh release view "${tag}" --json url -q .url)" >> "${GITHUB_STEP_SUMMARY}"
