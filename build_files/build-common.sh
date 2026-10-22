@@ -4,6 +4,11 @@ set -ouex pipefail
 # shellcheck source=/dev/null
 source /ctx/lib-verify.sh
 
+# Packages we want to be sure we always have latest version of
+UPDATE_PACKAGES=(
+    ca-certificates
+)
+
 # Common packages for all variants
 # Verified installed after the transaction; a missing one fails the build.
 COMMON_PACKAGES=(
@@ -51,6 +56,8 @@ COMMON_SYSTEMCTL=(
 
 # Enable tailscale repo
 dnf5 config-manager setopt tailscale-stable.enabled=true
+
+dnf5 -y upgrade --enable-repo=terra "${UPDATE_PACKAGES[@]}"
 
 dnf5 -y install --skip-unavailable --skip-broken --enable-repo=terra \
     "${COMMON_PACKAGES[@]}" "${COMMON_PACKAGES_OPTIONAL[@]}"
