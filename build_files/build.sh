@@ -13,8 +13,19 @@ echo "Building variant: ${BUILD_VARIANT}"
 # BIB depsolve runs in an isolated environment and can't resolve file:// GPG
 # key paths from the source container image. Disable gpgcheck for affected repos
 # so ISO builds can complete. Remove once BIB fixes path translation for GPG keys.
-for repo in /etc/yum.repos.d/terra*.repo; do
-    if [ -f "$repo" ] && grep -q 'gpgkey=file://' "$repo"; then
+# terra-release moved its repo files from /etc/yum.repos.d to
+# /usr/share/dnf5/repos.d in Fedora 45; look in both. Fail if neither has
+# any: --skip-unavailable would otherwise drop every terra package silently.
+shopt -s nullglob
+terra_repos=(/etc/yum.repos.d/terra*.repo /usr/share/dnf5/repos.d/terra*.repo)
+shopt -u nullglob
+if [ "${#terra_repos[@]}" -eq 0 ]; then
+    echo "ERROR: no terra repo files found" >&2
+    exit 1
+fi
+
+for repo in "${terra_repos[@]}"; do
+    if grep -q 'gpgkey=file://' "$repo"; then
         sed -i -e 's/^gpgcheck=1/gpgcheck=0/' -e 's/^repo_gpgcheck=1/repo_gpgcheck=0/' "$repo"
     fi
 done
@@ -25,7 +36,7 @@ done
 # drops every terra package without failing. Go straight to the origin: no
 # advertised hash, no mirror race. terra-release ships the baseurl commented
 # out next to each metalink.
-sed -i -e 's/^metalink=/#metalink=/' -e 's/^#baseurl=/baseurl=/' /etc/yum.repos.d/terra*.repo
+sed -i -e 's/^metalink=/#metalink=/' -e 's/^#baseurl=/baseurl=/' "${terra_repos[@]}"
 
 # Terra publishes one repo per Fedora release and can lag a Fedora bump; fall
 # back to the previous release while the current one does not exist. Only a
@@ -36,7 +47,7 @@ terra_status="$(curl -sSo /dev/null -w '%{http_code}' \
     "https://repos.fyralabs.com/terra${terra_release}/repodata/repomd.xml" || true)"
 if [ "${terra_status}" = "404" ]; then
     echo "NOTE: terra${terra_release} is not published; falling back to terra$((terra_release - 1))"
-    sed -i "s/[$]releasever/$((terra_release - 1))/g" /etc/yum.repos.d/terra*.repo
+    sed -i "s/[$]releasever/$((terra_release - 1))/g" "${terra_repos[@]}"
 fi
 
 # Mirror upstream bazzite c9ef733: lock qt6/plasma at the base image's
