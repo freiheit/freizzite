@@ -19,7 +19,9 @@ jobs:
   release:
     name: Release if due
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # Deliberately not gated on the build run's conclusion: one failing leg
+    # (e.g. a testing-stream build) fails the whole run even when every stable
+    # image published. release-gate.sh checks the published images instead.
     permissions:
       contents: write
       # --generate-notes lists merged PRs.
