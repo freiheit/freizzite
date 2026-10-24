@@ -22,9 +22,11 @@
       "matchUpdateTypes": ["pin", "pinDigest"]
     },
     {
-      // Merges once required checks pass; majors still wait for a human.
+      // Merges once required checks pass; majors and third-party actions (which
+      // run with signing/registry secrets) still wait for a human.
       "automerge": true,
       "matchManagers": ["github-actions"],
+      "matchPackageNames": ["actions/**", "github/**", "docker/**", "sigstore/**"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
     },
     // This prevents the default demo image used in ublue-os/image-template
