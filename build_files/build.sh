@@ -153,19 +153,42 @@ verify_libs_resolve "${LINK_CHECK[@]}" "${LINK_CHECK_VARIANT[@]}"
 ####################
 
 # 1Password's scriptlets create these groups directly instead of shipping
-# sysusers.d, which `bootc container lint` flags. Declare the groups without
-# pinning a GID: the number the build container allocates is not the number a
-# real system has (builds land in the 1000+ range, where human users live), and
-# systemd-sysusers never renumbers a group that already exists -- so a recorded
-# GID is at best inert and at worst collides with a real user's group.
+# sysusers.d, which `bootc container lint` flags, and the build container
+# allocates them from the 1000+ range. The setgid helpers (BrowserSupport,
+# 1password-mcp, op) carry that numeric GID in the image, so on a real system
+# they land on a human's group (1000 = eric, 1001 = kat). Setgid to your own
+# group is no privilege change, the kernel leaves AT_SECURE unset, and
+# BrowserSupport aborts ("running without libc's security"): the browser
+# extension shows "Connection problem". Pin the GIDs and re-own the files.
+# The numbers are monolith's existing /etc/group entries, which
+# systemd-sysusers never renumbers, so no host change is needed there.
+# shortcut: one GID set for every host; a host whose /etc/group already has
+# different numbers needs `groupmod -g` once to match these.
 # `docker` is flagged too but comes from the bazzite-dx base -- pinning a GID we
 # do not own would fight upstream if they ever change it.
-# `|| true` because getent exits 2 when it finds none of them, and pipefail
-# would otherwise abort the build.
-getent group onepassword onepassword-cli onepassword-mcp |
-    sed 's/^\([^:]*\):.*/g \1 -/' >/usr/lib/sysusers.d/freizzite-1password.conf || true
+declare -A OP_GIDS=([onepassword]=951 [onepassword-mcp]=950 [onepassword-cli]=1002)
+: >/usr/lib/sysusers.d/freizzite-1password.conf
+for group in onepassword onepassword-mcp onepassword-cli; do
+    old_gid="$(getent group "${group}" | cut -d: -f3)" || continue
+    new_gid="${OP_GIDS[${group}]}"
+    if [ "${old_gid}" != "${new_gid}" ]; then
+        groupmod -g "${new_gid}" "${group}"
+        # chgrp clears setgid; put it back on files that had it
+        find /usr /opt -xdev -gid "${old_gid}" -print0 | while IFS= read -r -d '' f; do
+            mode="$(stat -c %a "${f}")"
+            chgrp -h "${new_gid}" "${f}"
+            [ -L "${f}" ] || chmod "${mode}" "${f}"
+        done
+    fi
+    echo "g ${group} ${new_gid}" >>/usr/lib/sysusers.d/freizzite-1password.conf
+done
 [ -s /usr/lib/sysusers.d/freizzite-1password.conf ] ||
     rm -f /usr/lib/sysusers.d/freizzite-1password.conf
+for f in /opt/1Password/1Password-BrowserSupport /opt/1Password/1password-mcp /usr/bin/op; do
+    [ -e "${f}" ] || continue
+    stat -c '%a %G %n' "${f}"
+    [ "$(stat -c %a "${f}")" = 2755 ] || { echo "ERROR: ${f} lost setgid" >&2; exit 1; }
+done
 
 # dnf4 state (dragged in by etckeeper-dnf/dnf-plugins-core), rpm-state and
 # /run/dnf are build artifacts. `dnf clean all` does not touch these -- the
