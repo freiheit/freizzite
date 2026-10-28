@@ -57,11 +57,11 @@ From scanning `ublue-os/main` + `ublue-os/bazzite` (workflows/Justfiles only):
 
 ## Deferred
 
-- **Seeded rechunk:** `ostree-rechunk-seeded` in the `Justfile` is unused since
-  2026-10-10 because `rpm-ostree compose build-chunked-oci` panics with a
-  baseline image (bootc-dev/bootc#1885). The unseeded variant builds but drops
-  the image config (no labels), so CI uses chunkah. Revisit when the upstream
-  bug closes; drop both rpm-ostree recipes if chunkah holds for a few months.
+- **rpm-ostree rechunk:** the seeded recipe was removed (2026-10-28) because
+  `rpm-ostree compose build-chunked-oci` panics with a baseline image
+  (bootc-dev/bootc#1885). The unseeded `ostree-rechunk` in the `Justfile` builds
+  but drops the image config (no labels), so CI uses chunkah. Drop
+  `ostree-rechunk` too if chunkah holds for a few months.
 
 ## Pending validation (watch; act only if they fail)
 
