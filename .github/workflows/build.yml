@@ -17,9 +17,10 @@ on:
     - cron: "17 11-23 * * *" # hourly, 11am-11pm US/Pacific
       timezone: "America/Los_Angeles"
     # Unconditional rebuild of every target, bypassing the gate entirely. It
-    # picks up floating build-time deps the gate cannot see (terra, COPRs, the
-    # Mozilla/1Password/Microsoft repos, ~120 dnf packages), and guarantees a
-    # build even if the gate itself breaks in the "always skip" direction.
+    # picks up floating build-time deps the gate cannot see (untracked
+    # packages from terra and the vendor repos, ~120 dnf packages), and
+    # guarantees a build even if the gate itself breaks in the "always skip"
+    # direction.
     # Must stay byte-identical to FORCE_CRON in the matrix job.
     - cron: "40 5 * * 1"
   workflow_dispatch:
@@ -82,6 +83,8 @@ jobs:
             code        vscode  https://packages.microsoft.com/yumrepos/vscode
             vesktop     terra   https://repos.fyralabs.com/terra$releasever
             ghostty     ghostty https://download.copr.fedorainfracloud.org/results/scottames/ghostty/fedora-$releasever-x86_64/
+            1password     1password     https://downloads.1password.com/linux/rpm/stable/$basearch
+            1password-cli 1password-cli https://downloads.1password.com/linux/rpm/stable/$basearch
           # Rebuild at least every 3 days even if the base has not moved, so
           # floating package repos (Firefox, 1Password, vscode, terra, COPRs)
           # do not go stale.
