@@ -134,6 +134,9 @@ jobs:
             # trim leading/trailing whitespace from the description
             desc="${desc#"${desc%%[![:space:]]*}"}"
             desc="${desc%"${desc##*[![:space:]]}"}"
+            # Every TRACKED package comes from build-desktop.sh, which deck skips.
+            pkgs_epoch="${PKGS_NEWEST_EPOCH:-}"
+            [ "${base}" = "bazzite-deck" ] && pkgs_epoch=""
 
             for stream in stable testing; do
               if [ "${stream}" = "testing" ]; then
@@ -152,6 +155,7 @@ jobs:
               result="$(BASE_REF="ghcr.io/ublue-os/${base}:${stream}" \
                         PUBLISHED_REF="ghcr.io/${OWNER}/${name}:${default_tag}" \
                         MIN_INTERVAL_HOURS="${min_interval}" \
+                        PKGS_NEWEST_EPOCH="${pkgs_epoch}" \
                         .github/scripts/upstream-gate.sh)"
 
               build="$(jq -r '.build' <<<"${result}")"
