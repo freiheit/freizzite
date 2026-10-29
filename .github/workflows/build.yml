@@ -70,7 +70,7 @@ jobs:
             freizzite-dx-nvidia|bazzite-dx-nvidia|Freizzite - customized Bazzite (dx-nvidia: developer tools + NVIDIA drivers)
             freizzite-deck|bazzite-deck|Freizzite - customized Bazzite (deck: Steam Deck / handheld)
             # freizzite|bazzite|Freizzite - customized Bazzite
-            # freizzite-nvidia|bazzite-nvidia|Freizzite - customized Bazzite (NVIDIA drivers)
+            freizzite-nvidia|bazzite-nvidia|Freizzite - customized Bazzite (NVIDIA drivers)
             # freizzite-nvidia-open|bazzite-nvidia-open|Freizzite - customized Bazzite (open NVIDIA drivers)
           LABEL_NS: "io.github.freiheit.build"
           # Vendor repos that move independently of the base image. One
