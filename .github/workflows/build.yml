@@ -251,10 +251,10 @@ jobs:
       # bazzite-dx and aurora use this action for the same reason.
       #
       # Currently a no-op here: the action skips itself unless /mnt is a
-      # mountpoint, and ubuntu-24.04 runners have no /mnt even as the first
-      # step after checkout (aurora, where this works, runs ubuntu-26.04).
-      # Kept ahead of the space-clearing step and left in place so it starts
-      # working if the runner image regains a temp disk. Non-fatal either way.
+      # mountpoint, and the standard ubuntu-26.04 runners have no /mnt (it only
+      # acts on the larger runner pool). Kept ahead of the space-clearing step
+      # so it starts working if the runner image regains a temp disk.
+      # Non-fatal either way.
       - name: Mount BTRFS for podman storage
         uses: ublue-os/container-storage-action@25e05be4948f77746938687877829d15c5038036
         continue-on-error: true
