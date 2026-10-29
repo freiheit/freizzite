@@ -28,11 +28,11 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          packages: freizzite-dx-nvidia,freizzite-deck
+          packages: freizzite-dx-nvidia,freizzite-deck,freizzite-nvidia
           # exclude-tags overrides every other rule: always keep the current
           # pointer and the ArtifactHub ownership artifact. cosign signatures
           # are handled as children of their image, so they follow it.
-          exclude-tags: latest,testing,artifacthub.io
+          exclude-tags: latest,testing,unstable,artifacthub.io
           # Never delete anything younger than 30 days; beyond that, keep the
           # 10 newest tagged and 3 newest untagged images and prune the rest.
           older-than: 30 days

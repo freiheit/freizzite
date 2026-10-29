@@ -133,7 +133,7 @@ build $target_image=image_name $tag=default_tag:
 
     # Freizzite: record which upstream base produced this image, so the matrix
     # job's gate can tell from the published image alone whether upstream has
-    # moved. BASE_TAG is "stable"/"testing" locally and "<stream>@sha256:..."
+    # moved. BASE_TAG is "stable"/"testing"/"unstable" locally and "<stream>@sha256:..."
     # in CI; strip any digest so the ref label stays the floating ref we watch.
     BASE_STREAM="${BASE_TAG:-stable}"
     BASE_STREAM="${BASE_STREAM%%@*}"
