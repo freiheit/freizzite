@@ -44,10 +44,10 @@
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
     },
     {
-      // The build gate resolves and pins the base image digest at build time,
-      // so the Containerfile's ARG BASE_TAG digest is only ever a local-dev
-      // default -- CI overrides it per matrix target. Renovate bumping it just
-      // opens a PR on every upstream move, duplicating what the gate does.
+      // The build gate resolves and pins the base image digest at build time
+      // and CI overrides ARG BASE_TAG per matrix target, so a digest pinned in
+      // the Containerfile would never be used. Renovate pinning or bumping it
+      // just opens a PR on every upstream move, duplicating what the gate does.
       "enabled": false,
       "matchUpdateTypes": ["digest", "pinDigest"],
       "matchFileNames": ["Containerfile"],

@@ -251,10 +251,10 @@ jobs:
       # bazzite-dx and aurora use this action for the same reason.
       #
       # Currently a no-op here: the action skips itself unless /mnt is a
-      # mountpoint, and ubuntu-24.04 runners have no /mnt even as the first
-      # step after checkout (aurora, where this works, runs ubuntu-26.04).
-      # Kept ahead of the space-clearing step and left in place so it starts
-      # working if the runner image regains a temp disk. Non-fatal either way.
+      # mountpoint, and the standard ubuntu-26.04 runners have no /mnt (it only
+      # acts on the larger runner pool). Kept ahead of the space-clearing step
+      # so it starts working if the runner image regains a temp disk.
+      # Non-fatal either way.
       - name: Mount BTRFS for podman storage
         uses: ublue-os/container-storage-action@25e05be4948f77746938687877829d15c5038036
         continue-on-error: true
@@ -280,20 +280,20 @@ jobs:
         run: |
           IMAGE_NAME=$(just image_name)
 
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> "${GITHUB_ENV}"
 
       - name: Default Tag
         id: gen-default-tag
         run: |
           DEFAULT_TAG=$(just generate-default-tag)
 
-          echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
+          echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
 
       - name: Prepare environment
         run: |
           # Lowercase the image uri https://github.com/macbre/push-to-ghcr/issues/12
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> "${GITHUB_ENV}"
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> "${GITHUB_ENV}"
 
       # This actually builds the container image
       - name: Build Image
@@ -356,16 +356,16 @@ jobs:
         id: rechunk
         timeout-minutes: 70
         run: |
-          sudo -E $(command -v just) rechunk \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          sudo -E "$(command -v just)" rechunk \
+            "${IMAGE_NAME}" \
+            "${DEFAULT_TAG}"
 
       - name: Generate Build Tags
         id: gen-build-tags
         run: |
           alias_tags="$(just generate-build-tags \
-                        ${IMAGE_NAME} \
-                        ${DEFAULT_TAG})"
+                        "${IMAGE_NAME}" \
+                        "${DEFAULT_TAG}")"
 
           # Freizzite: the testing stream must not publish the stream-agnostic
           # tags (bare YYYYMMDD / YYYYMMDD-<sha>) that generate-build-tags emits,
@@ -381,14 +381,14 @@ jobs:
 
           echo "Tags for this Action..."
           echo "${alias_tags}"
-          echo "alias_tags=${alias_tags}" >> $GITHUB_OUTPUT
+          echo "alias_tags=${alias_tags}" >> "${GITHUB_OUTPUT}"
 
       - name: Tag Image
         id: tag-images
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
-          sudo -E $(command -v just) tag-images \
+          sudo -E "$(command -v just)" tag-images \
             "${IMAGE_NAME}" \
             "${DEFAULT_TAG}" \
             "${ALIAS_TAGS}"
@@ -431,7 +431,7 @@ jobs:
           # of failing the whole build
           for tag in ${ALIAS_TAGS}; do
             for attempt in 1 2 3; do
-              if sudo -E podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}; then
+              if sudo -E podman push --digestfile=/tmp/digestfile "${IMAGE_NAME}:${tag}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"; then
                 break
               elif [[ "${attempt}" -lt 3 ]]; then
                 echo "Push of ${tag} failed (attempt ${attempt}); retrying in 30s..." >&2
@@ -444,7 +444,7 @@ jobs:
 
           digest=$(< /tmp/digestfile)
 
-          echo "digest=${digest}" >> $GITHUB_OUTPUT
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
 
       # This section is optional and only needs to be enabled if you plan on distributing
       # your project for others to consume. You will need to create a public and private key
@@ -468,7 +468,7 @@ jobs:
           # https://github.com/containers/container-libs/issues/388
           # https://github.com/coreos/rpm-ostree/issues/5509
           # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
-          cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
+          cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}"
 
       # Freizzite: publish the per-variant Artifact Hub repository-metadata file
       # to the `artifacthub.io` OCI tag so package ownership is claimed

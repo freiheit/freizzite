@@ -57,12 +57,14 @@ jobs:
           # Concatenate the types with a hyphen
           DISK_TYPE=$(echo "${{ matrix.disk-type }}" | tr ' ' '-')
           # Lowercase the image uri
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          # Freizzite: image name comes from the variant matrix
-          echo "IMAGE_NAME=${{ matrix.variant.name }}" >> ${GITHUB_ENV}
-          echo "DISK_TYPE=${DISK_TYPE}" >> ${GITHUB_ENV}
-          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
-          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
+          {
+            echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}"
+            # Freizzite: image name comes from the variant matrix
+            echo "IMAGE_NAME=${{ matrix.variant.name }}"
+            echo "DISK_TYPE=${DISK_TYPE}"
+            echo "USER_UID=${USER_UID}"
+            echo "USER_GID=${USER_GID}"
+          } >> "${GITHUB_ENV}"
 
       - name: Install dependencies
         if: inputs.platform == 'arm64'
@@ -121,10 +123,10 @@ jobs:
           mkdir -p ${{ steps.build.outputs.output-directory }}/iso
           cd ${{ steps.build.outputs.output-directory }}/iso
           # Generate SHA256 checksum (both file names)
-          sha256sum *.iso > ${{ env.IMAGE_NAME }}.iso.sha256sum
+          sha256sum -- *.iso > ${{ env.IMAGE_NAME }}.iso.sha256sum
           cp ${{ env.IMAGE_NAME }}.iso.sha256sum ${{ env.IMAGE_NAME }}.iso.shasum
           # Generate MD5 checksum
-          md5sum *.iso > ${{ env.IMAGE_NAME }}.iso.md5sum
+          md5sum -- *.iso > ${{ env.IMAGE_NAME }}.iso.md5sum
 
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
@@ -152,4 +154,4 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rclone
-          rclone copy $SOURCE_DIR S3:${{ secrets.S3_BUCKET_NAME }}
+          rclone copy "${SOURCE_DIR}" S3:${{ secrets.S3_BUCKET_NAME }}
