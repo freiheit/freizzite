@@ -104,7 +104,6 @@ DESKTOP_TERRA_PACKAGES=(
     rubygems-devel
     ruff
     ShellCheck
-    shfmt
     sqlite
     sqlite-analyzer
     sqlite-debug
@@ -151,6 +150,12 @@ DESKTOP_TERRA_PACKAGES=(
     liquidctl
 )
 
+# Installed the same way but not verified: Fedora's shfmt is orphaned and
+# missing from F45.
+DESKTOP_TERRA_PACKAGES_OPTIONAL=(
+    shfmt
+)
+
 # Services I like to be sure are set up
 DESKTOP_SYSTEMCTL=(
     chrony-wait.service
@@ -163,7 +168,8 @@ DESKTOP_SYSTEMCTL=(
 )
 
 dnf -y install --skip-unavailable "${DESKTOP_PACKAGES[@]}"
-dnf -y install --skip-unavailable --enable-repo=terra "${DESKTOP_TERRA_PACKAGES[@]}"
+dnf -y install --skip-unavailable --enable-repo=terra \
+    "${DESKTOP_TERRA_PACKAGES[@]}" "${DESKTOP_TERRA_PACKAGES_OPTIONAL[@]}"
 
 systemctl enable "${DESKTOP_SYSTEMCTL[@]}"
 
