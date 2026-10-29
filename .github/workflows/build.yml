@@ -37,8 +37,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Freizzite: compute the build matrix. A `testing` stream is added for a
-  # variant only when its upstream base publishes a :testing tag. On top of
+  # Freizzite: compute the build matrix. A `testing` or `unstable` stream is
+  # added for a variant only when its upstream base publishes that tag. On top of
   # that, each variant/stream target is gated on whether its upstream base has
   # actually moved since we last published -- see .github/scripts/upstream-gate.sh.
   # Targets with nothing to do are dropped, so a quiet poll builds nothing.
@@ -92,7 +92,8 @@ jobs:
           MIN_INTERVAL_HOURS_STABLE: "0"
           # bazzite's :testing moves 1-5x/day. Without a floor, gating that
           # stream would build *more* often than the fixed schedule it
-          # replaces; 4h caps it at 6 builds/day.
+          # replaces; 4h caps it at 6 builds/day. :unstable is at least as
+          # chatty, so it shares the floor.
           MIN_INTERVAL_HOURS_TESTING: "4"
           # Must match the weekly `schedule` cron above exactly.
           FORCE_CRON: "40 5 * * 1"
@@ -141,16 +142,16 @@ jobs:
             pkgs_epoch="${PKGS_NEWEST_EPOCH:-}"
             [ "${base}" = "bazzite-deck" ] && pkgs_epoch=""
 
-            for stream in stable testing; do
-              if [ "${stream}" = "testing" ]; then
-                default_tag=testing
-                min_interval="${MIN_INTERVAL_HOURS_TESTING}"
-              else
+            for stream in stable testing unstable; do
+              if [ "${stream}" = "stable" ]; then
                 default_tag=latest
                 min_interval="${MIN_INTERVAL_HOURS_STABLE}"
+              else
+                default_tag="${stream}"
+                min_interval="${MIN_INTERVAL_HOURS_TESTING}"
               fi
 
-              # The gate doubles as the upstream :testing existence probe it
+              # The gate doubles as the upstream :testing/:unstable existence probe it
               # replaces: an unresolvable-because-404 base means the stream does
               # not exist for this variant. It distinguishes that from a
               # transient registry fault, which the old `imagetools inspect
@@ -221,7 +222,7 @@ jobs:
     # Freizzite: targets come from the `matrix` job above. IMAGE_NAME/BASE_IMAGE/
     # BUILD_VARIANT/BASE_TAG/DEFAULT_TAG/IMAGE_DESC override the image-template.env
     # defaults (env beats dotenv in the Justfile recipes). STREAM selects
-    # stable/testing.
+    # stable/testing/unstable.
     strategy:
       fail-fast: false
       matrix:
@@ -374,14 +375,14 @@ jobs:
                         "${IMAGE_NAME}" \
                         "${DEFAULT_TAG}")"
 
-          # Freizzite: the testing stream must not publish the stream-agnostic
+          # Freizzite: non-stable streams must not publish the stream-agnostic
           # tags (bare YYYYMMDD / YYYYMMDD-<sha>) that generate-build-tags emits,
           # or they would collide with the stable stream on the same commit.
-          # Keep only testing-prefixed tags for that stream.
-          if [[ "${STREAM:-stable}" == "testing" ]]; then
+          # Keep only the stream-prefixed tags for those streams.
+          if [[ "${STREAM:-stable}" != "stable" ]]; then
             filtered=()
             for t in ${alias_tags}; do
-              [[ "${t}" == testing* ]] && filtered+=("${t}")
+              [[ "${t}" == "${STREAM}"* ]] && filtered+=("${t}")
             done
             alias_tags="${filtered[*]}"
           fi
