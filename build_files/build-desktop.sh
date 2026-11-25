@@ -51,6 +51,15 @@ dnf5 config-manager addrepo --id=claude-desktop-unofficial \
   --set=gpgkey=https://pkg.claude-desktop-debian.dev/KEY.gpg \
   --set=gpgcheck=1 --set=repo_gpgcheck=1
 
+# https://grafana.com/docs/alloy/latest/set-up/install/linux/
+# Alloy ships disabled; openvox-control's profile::alloy configures and
+# enables it on the nodes that have a Grafana Cloud token.
+dnf5 config-manager addrepo --id=grafana \
+  --set=name=grafana \
+  --set=baseurl=https://rpm.grafana.com \
+  --set=gpgkey=https://rpm.grafana.com/gpg.key \
+  --set=gpgcheck=1 --set=repo_gpgcheck=1
+
 DESKTOP_PACKAGES=(
     # I'd prefer non-flatpak browser so I can do 1password desktop integration easier
     firefox
@@ -87,6 +96,9 @@ DESKTOP_PACKAGES=(
 
     # host python3 modules for ~/Code/personal-brief scripts
     python3-websockets
+
+    # Grafana Cloud metrics/journal agent (rpm.grafana.com)
+    alloy
 )
 
 DESKTOP_TERRA_PACKAGES=(
@@ -191,6 +203,17 @@ dnf -y install --skip-unavailable --enable-repo=terra \
     "${DESKTOP_TERRA_PACKAGES[@]}" "${DESKTOP_TERRA_PACKAGES_OPTIONAL[@]}"
 
 systemctl enable "${DESKTOP_SYSTEMCTL[@]}"
+
+# Fails the build if the binary does not run (or "alloy" resolved to some
+# other package).
+/usr/bin/alloy --version
+
+# alloy's RPM scriptlet runs useradd instead of shipping sysusers.d. A host's
+# /etc/passwd is already locally modified, so the 3-way /etc merge keeps the
+# host's copy and the image's alloy user never reaches it. sysusers creates it
+# at boot, before tmpfiles recreates /var/lib/alloy owned by it.
+echo 'u alloy - "Grafana Alloy" /var/lib/alloy' >/usr/lib/sysusers.d/freizzite-alloy.conf
+
 systemctl --global enable discover-kns-update.timer
 
 # steamdeck-dsp's handheld audio profiles. They copy into /usr/local, which
